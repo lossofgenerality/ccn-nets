@@ -48,5 +48,15 @@
   "status": "drawn",
   "run": "",
   "source": "lossofgenerality/tensor-algebra-nets@7ed9ffa"
+ },
+ {
+  "project": "fabric",
+  "name": "WeaveNet",
+  "path": "fabric/weavenet",
+  "purpose": "Learns the regular criss-cross weave of normal fabric, so that whatever it cannot redraw (holes, loose threads, runs, knots) shows up as the defect: the learnt counterpart of removing the weave with an FFT notch filter.",
+  "numbers": 8464,
+  "status": "trained",
+  "run": "2026-11-24-seed7",
+  "source": "lossofgenerality/ccn-net-lab@f45c1d9"
  }
 ]

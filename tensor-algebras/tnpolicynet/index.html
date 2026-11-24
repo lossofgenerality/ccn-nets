@@ -50,6 +50,7 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <main class="band">
 <section class="panel"><h2>Structure</h2><p>Input (22 tokens); embedding 128; encoder 3 × (4 heads, FF 512 GELU); position 1; softmax over 11 classes (Rule); softmax over positions (Node).</p><p class="prov">Not yet trained in the lab: there is no recorded run, so no training curve, results or 3D view yet. Its training notebook, written by the net-diagram editor from its diagram, is under Downloads.</p></section>
 
+
 <div class="two">
 <section class="panel write"><h2>Aim</h2>
 <p>tnPolicyNet is a transformer encoder with two heads: one chooses the rewrite rule (11 classes), the other the node to apply it at (a softmax over positions). The net decides and the exact engine executes, so every rewrite is sound.</p>

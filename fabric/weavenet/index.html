@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeaveNet · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<header class="top">
+<p class="crumb"><a href="../../">CCN Nets</a> · Fabric: anomaly detection</p>
+<h1>WeaveNet</h1>
+<p class="lede">Learns the regular criss-cross weave of normal fabric, so that whatever it cannot redraw (holes, loose threads, runs, knots) shows up as the defect: the learnt counterpart of removing the weave with an FFT notch filter.</p>
+<div class="stats"><div class="stat"><b>8,464</b><span>numbers in the net</span></div><div class="stat"><b>6 of 6</b><span>Test images with at least one detection</span></div><div class="stat"><b>3.17</b><span>Detections per image, test (mean)</span></div><div class="stat"><b>5.44 s</b><span>training on a CPU</span></div></div>
+<div class="actions"><a class="btn alt" href="#downloads">Downloads</a></div>
+</header>
+<main class="band">
+<div class="two"><section class="panel"><h2>Structure</h2><p>16 × 16 patches of the image (256 numbers) → 16 hidden units (Tanh) → 256 numbers redrawn (linear), trained on its own patches with half the mean squared error.</p><h2>Training</h2><div class="fig"><svg viewBox="0 0 560 220" role="img" aria-label="Loss after each epoch"><line x1="64" x2="548" y1="186" y2="186" stroke="#e3e9ef"/><text x="56" y="190" text-anchor="end" font-size="12" fill="#4b5f75">0</text><line x1="64" x2="548" y1="100.0" y2="100.0" stroke="#e3e9ef"/><text x="56" y="104.0" text-anchor="end" font-size="12" fill="#4b5f75">25.1</text><line x1="64" x2="548" y1="14" y2="14" stroke="#e3e9ef"/><text x="56" y="18" text-anchor="end" font-size="12" fill="#4b5f75">50.3</text><polyline points="64.0,14.0 101.2,51.7 138.5,68.1 175.7,74.6 212.9,78.2 250.2,80.2 287.4,90.2 324.6,90.7 361.8,91.1 399.1,90.5 436.3,91.5 473.5,90.0 510.8,92.1 548.0,92.1" fill="none" stroke="#0b5a9a" stroke-width="2"/><circle cx="64.0" cy="14.0" r="3" fill="#0b5a9a"/><circle cx="101.2" cy="51.7" r="3" fill="#0b5a9a"/><circle cx="138.5" cy="68.1" r="3" fill="#0b5a9a"/><circle cx="175.7" cy="74.6" r="3" fill="#0b5a9a"/><circle cx="212.9" cy="78.2" r="3" fill="#0b5a9a"/><circle cx="250.2" cy="80.2" r="3" fill="#0b5a9a"/><circle cx="287.4" cy="90.2" r="3" fill="#0b5a9a"/><circle cx="324.6" cy="90.7" r="3" fill="#0b5a9a"/><circle cx="361.8" cy="91.1" r="3" fill="#0b5a9a"/><circle cx="399.1" cy="90.5" r="3" fill="#0b5a9a"/><circle cx="436.3" cy="91.5" r="3" fill="#0b5a9a"/><circle cx="473.5" cy="90.0" r="3" fill="#0b5a9a"/><circle cx="510.8" cy="92.1" r="3" fill="#0b5a9a"/><circle cx="548.0" cy="92.1" r="3" fill="#0b5a9a"/><text x="64.0" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">1</text><text x="138.5" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">3</text><text x="212.9" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">5</text><text x="287.4" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">7</text><text x="361.8" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">9</text><text x="436.3" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">11</text><text x="510.8" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">13</text><text x="548.0" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">14</text><text x="312.0" y="218" text-anchor="middle" font-size="12" fill="#4b5f75">epoch</text></svg></div><p class="prov">The loss (half the mean squared error plus the weight penalty) after each of 14 epochs.</p></section><section class="panel"><h2>Results</h2><table><tr><td>Training patches</td><td>55815</td></tr><tr><td>Set aside as hardest to redraw</td><td>2791</td></tr><tr><td>Loss, first and last epoch</td><td>50.3, 27.5</td></tr><tr><td>Gradient check (linear output), largest difference</td><td>2.68e-11</td></tr><tr><td>Test images with at least one detection</td><td>6 of 6</td></tr><tr><td>All images with at least one detection</td><td>21 of 21</td></tr><tr><td>Detections per image, test (mean)</td><td>3.17</td></tr><tr><td>Mean squared difference, test images</td><td>0.17</td></tr><tr><td>Numbers in the net</td><td>8464</td></tr></table></section></div>
+
+<section class="panel"><h2>Loose threads</h2><img src="files/panels-1.png" alt="Loose threads" loading="lazy"></section><section class="panel"><h2>A knot</h2><img src="files/panels-2.png" alt="A knot" loading="lazy"></section><section class="panel"><h2>A hole</h2><img src="files/panels-3.png" alt="A hole" loading="lazy"></section><section class="panel"><h2>A loose thread across the weave</h2><img src="files/panels-4.png" alt="A loose thread across the weave" loading="lazy"></section><section class="panel"><h2>A vertical line</h2><img src="files/panels-5.png" alt="A vertical line" loading="lazy"></section><section class="panel"><h2>Loops of loose thread</h2><img src="files/panels-6.png" alt="Loops of loose thread" loading="lazy"></section><section class="panel"><h2>What the 16 hidden units look for: the weave&#x27;s own stripes</h2><img src="files/filters.png" alt="What the 16 hidden units look for: the weave&#x27;s own stripes" loading="lazy"></section>
+<div class="two">
+<section class="panel write"><h2>Aim</h2>
+<p>The classical fabric trials find defects in three independent ways (a Gabor filter bank, texture codes with nearest neighbours, and removing the weave with an FFT notch filter) and box the areas where they agree. WeaveNet is the learnt counterpart of the third: instead of removing the weave's frequencies by hand, a small net <strong>learns the weave</strong> and redraws each patch of fabric as clean weave. What it cannot redraw is the defect.</p>
+<h2>Data</h2>
+<p>The 21 images of "Fabric Anomaly Dataset 2" (256 × 256, greyscale), gathered from open sources: tiles from three rolls, each with a defect: holes, knots, loose threads, runs. Each image is put on one scale (mean 0, spread 1). Six images are kept apart for testing, one from every few so every roll is in both sets; the other fifteen give 55,815 training patches of 16 × 16 pixels, taken every 4 pixels. No image has been labelled by anyone: the net learns from the fabric alone.</p>
+<h2>Design</h2>
+<p>An autoencoder: each patch (256 numbers) is squeezed through <strong>16 hidden units</strong> (Tanh) and redrawn (256 numbers, linear), with half the mean squared error as the loss. The squeeze is the point: 16 units are enough for the regular weave but too few for every flaw, so the redrawn image is clean fabric. It is trained with our own code (forward pass, backpropagation, Adam), with a gradient check against finite differences.</p>
+<p>Training is <strong>robust</strong>: after six passes, the 5% of patches it redraws worst (most of them on defects) are set aside, and training goes on with the rest, so it learns the weave rather than the flaws.</p>
+<p>To score an image, every patch is redrawn and put back (overlaps averaged); the smoothed squared difference is the error map, which becomes a robust z-score (the image's median and median absolute deviation), as in the classical trials. A defect starts where z ≥ 9 and grows over the pixels around it where z ≥ 4, joining pieces across small gaps (hysteresis, as in edge detection).</p>
+<h2>Results</h2>
+<p>Every one of the 6 test images, and all 21 images, has its defect found, with 3.2 boxes per test image on average. The pictures show it best: the second panel is the weave as the net learnt it, with the flaws gone; the error map lights up exactly along the loose threads, around the knot and on the hole.</p>
+<p>The 16 hidden units, drawn as 16 × 16 pictures, are mostly horizontal stripes like the rows of the weft, with a few checks like the criss-cross itself: the net has found the weave's structure by itself, the learnt version of the peaks the FFT shows.</p>
+<h2>Limits</h2>
+<ol>
+<li><strong>Every image has a defect,</strong> so finding one in each says nothing yet about false alarms. Some extra boxes fall on small irregularities of the weave that may or may not count as defects. Clean images are needed to measure false alarms properly.</li>
+<li><strong>There are no hand-drawn defect outlines,</strong> so the boxes are judged by eye. The next step is to compare them with the boxes of the three classical methods, and then let WeaveNet vote with them.</li>
+<li><strong>A dense net sees each patch on its own.</strong> A convolutional version would share its filters across the image, and its filters can be set beside the Gabor bank.</li>
+</ol></section>
+<section class="panel"><h2>Settings of this run</h2><table><tr><td>patch</td><td>16</td></tr><tr><td>stride (training)</td><td>4</td></tr><tr><td>stride (scoring)</td><td>4</td></tr><tr><td>hidden</td><td>16</td></tr><tr><td>activation</td><td>Tanh</td></tr><tr><td>output</td><td>linear, half mean squared error</td></tr><tr><td>epochs</td><td>14</td></tr><tr><td>robust after epoch</td><td>6</td></tr><tr><td>set aside (worst redrawn)</td><td>0.05</td></tr><tr><td>batch_size</td><td>256</td></tr><tr><td>lr</td><td>0.003</td></tr><tr><td>l2</td><td>1e-05</td></tr><tr><td>seed</td><td>7</td></tr><tr><td>smoothing of the error map (pixels)</td><td>2.0</td></tr><tr><td>z to start a defect</td><td>9.0</td></tr><tr><td>z to grow it</td><td>4.0</td></tr><tr><td>joining gap (pixels)</td><td>4</td></tr><tr><td>smallest defect (pixels)</td><td>60</td></tr><tr><td>border left out (pixels)</td><td>6</td></tr><tr><td>test images</td><td>6</td></tr></table>
+<h2 id="downloads" style="margin-top:22px">Downloads</h2><ul class="files"><li><a href="files/train.py">train.py</a></li><li><a href="files/weights.npz">weights.npz</a></li></ul></section>
+</div>
+<p class="prov">Built from lossofgenerality/ccn-net-lab at f45c1d9, training run 2026-11-24-seed7 (ccnlab 0.1.0, Python 3.13.18, NumPy 2.5.3, CPU).</p>
+</main>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>
