@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>owNet · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<header class="top">
+<p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets)</p>
+<h1>owNet</h1>
+<p class="lede">The net built from scratch in Unit 4: it reads a short expression such as (a⨁b)⨂c, token by token, and writes the distributed form in prefix order (⨁ ⨂ a c ⨂ b c).</p>
+<div class="stats"><div class="stat"><b>59,950</b><span>numbers in the net</span></div><div class="stat"><b>trained in Wolfram (Unit 4)</b><span>status</span></div></div>
+<div class="actions"><a class="btn alt" href="../../editor/net-diagram-editor.html?example=ownet">Open its diagram</a><a class="btn alt" href="#downloads">Downloads</a></div>
+</header>
+<main class="band">
+<section class="panel"><h2>Structure</h2><p>Target (10 tokens); embedding 32; Input (10 tokens); embedding 32; encoder 2 × (4 heads, FF 128 ReLU); decoder 2 × (4 heads, FF 128 ReLU); softmax per token over 10 (Probabilities).</p><p class="prov">Not yet trained in the lab: there is no recorded run, so no training curve, results or 3D view yet. Its training notebook, written by the net-diagram editor from its diagram, is under Downloads.</p></section>
+
+<div class="two">
+<section class="panel write"><h2>Aim</h2>
+<p>owNet is the net of Unit 4, "Build your own": a small transformer encoder–decoder that learns to distribute ⨂ over ⨁. Given the tokens of <code>(a⨁b)⨂c</code>, it writes <code>⨁ ⨂ a c ⨂ b c</code>, the distributed form in prefix order.</p>
+<h2>Where it stands</h2>
+<p>It was trained in Wolfram in Unit 4, and the trained net is kept in <code>unit4_build_your_own_nets.nb</code> (as <code>owNet = Uncompress[…]</code>), where it is restored and checked in a fresh process. It has not yet been trained in the lab's form, so there is no recorded run here yet. The diagram is in the net-diagram editor, which writes its training notebook (<code>owNetFromDiagram.nb</code>); a generated owNet has already been trained on a copy task as a check.</p>
+<h2>Next</h2>
+<p>Record a run in the lab's form, then a 3D view for sequence nets.</p></section>
+<section class="panel">
+<h2 id="downloads" style="margin-top:22px">Downloads</h2><ul class="files"><li><a href="files/owNetFromDiagram.nb">owNetFromDiagram.nb</a></li><li><a href="files/unit4_build_your_own_nets.nb">unit4_build_your_own_nets.nb</a></li><li><a href="files/net.json">net.json</a></li></ul></section>
+</div>
+<p class="prov">Built from lossofgenerality/tensor-algebra-nets at 7ed9ffa; no training run recorded in the lab yet.</p>
+</main>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>

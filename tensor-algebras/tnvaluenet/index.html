@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tnValueNet · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<header class="top">
+<p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets)</p>
+<h1>tnValueNet</h1>
+<p class="lede">Evaluates: estimates three numbers about an expression (such as its dimension and its number of terms), checked against exact values from the symbolic engine.</p>
+<div class="stats"><div class="stat"><b>626,819</b><span>numbers in the net</span></div><div class="stat"><b>drawn</b><span>status</span></div></div>
+<div class="actions"><a class="btn alt" href="../../editor/net-diagram-editor.html?example=tnvalue">Open its diagram</a><a class="btn alt" href="#downloads">Downloads</a></div>
+</header>
+<main class="band">
+<section class="panel"><h2>Structure</h2><p>Input (20 tokens); embedding 128; Dims (1 per token); per-token layer 128; add; encoder 3 × (4 heads, FF 512 GELU); Mean pool; 128 GELU; regression, 3 outputs (Estimate).</p><p class="prov">Not yet trained in the lab: there is no recorded run, so no training curve, results or 3D view yet. Its training notebook, written by the net-diagram editor from its diagram, is under Downloads.</p></section>
+
+<div class="two">
+<section class="panel write"><h2>Aim</h2>
+<p>tnValueNet is a transformer encoder with a pooled regression head: it reads an expression, with the dimension of each symbol given beside its token, and estimates three numbers about it. The exact engine gives the true values, so every estimate can be checked.</p>
+<h2>Where it stands</h2>
+<p>Drawn in the net-diagram editor, with its weights counted, and its training notebook generated (<code>tnValueNetFromDiagram.nb</code>). Training data from the TensorNets engine is the next step. The full design is in <code>DESIGN-tensornets.md</code>.</p></section>
+<section class="panel">
+<h2 id="downloads" style="margin-top:22px">Downloads</h2><ul class="files"><li><a href="files/tnValueNetFromDiagram.nb">tnValueNetFromDiagram.nb</a></li><li><a href="files/net.json">net.json</a></li></ul></section>
+</div>
+<p class="prov">Built from lossofgenerality/tensor-algebra-nets at 7ed9ffa; no training run recorded in the lab yet.</p>
+</main>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>

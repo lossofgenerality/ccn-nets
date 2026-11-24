@@ -8,5 +8,45 @@
   "status": "trained",
   "run": "2026-11-24-seed1234",
   "source": "lossofgenerality/ccn-agent-free-form-language@3de273e"
+ },
+ {
+  "project": "tensor-algebras",
+  "name": "owNet",
+  "path": "tensor-algebras/ownet",
+  "purpose": "The net built from scratch in Unit 4: it reads a short expression such as (a⨁b)⨂c, token by token, and writes the distributed form in prefix order (⨁ ⨂ a c ⨂ b c).",
+  "numbers": 59950,
+  "status": "trained in Wolfram (Unit 4)",
+  "run": "",
+  "source": "lossofgenerality/tensor-algebra-nets@7ed9ffa"
+ },
+ {
+  "project": "tensor-algebras",
+  "name": "tnParserNet",
+  "path": "tensor-algebras/tnparsernet",
+  "purpose": "Parses a tensor-algebra expression: reads its tokens and writes its tree in prefix order, for the exact engine to check and use.",
+  "numbers": 1422870,
+  "status": "drawn",
+  "run": "",
+  "source": "lossofgenerality/tensor-algebra-nets@7ed9ffa"
+ },
+ {
+  "project": "tensor-algebras",
+  "name": "tnPolicyNet",
+  "path": "tensor-algebras/tnpolicynet",
+  "purpose": "Simplifies: given an expression, chooses which rewrite rule to apply and at which node, so that the exact engine can carry it out soundly.",
+  "numbers": 611468,
+  "status": "drawn",
+  "run": "",
+  "source": "lossofgenerality/tensor-algebra-nets@7ed9ffa"
+ },
+ {
+  "project": "tensor-algebras",
+  "name": "tnValueNet",
+  "path": "tensor-algebras/tnvaluenet",
+  "purpose": "Evaluates: estimates three numbers about an expression (such as its dimension and its number of terms), checked against exact values from the symbolic engine.",
+  "numbers": 626819,
+  "status": "drawn",
+  "run": "",
+  "source": "lossofgenerality/tensor-algebra-nets@7ed9ffa"
  }
 ]
