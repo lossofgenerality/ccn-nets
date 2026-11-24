@@ -1,0 +1,50 @@
+Notebook[{
+Cell["SubjectNet as matrices: training, and the trained model", "Title"],
+Cell["By Dara O Shayda and Hikari Noor Hoshino (\:661f\:91ce\:30cc\:30fc\:30eb)
+AI System Programming Group", "Text"],
+Cell["The first section writes out how the net is trained (forward pass, loss, backpropagation and the Adam step, exactly as in ccn_nets.nn). The second is the trained model that evaluates an input. The third applies it, with the trained numbers in MatrixForm, to the sentence \:201cslide it right 2 units\:201d. Training stores W\:2081 as 2048 \:00d7 32 and works on rows (X\:00b7W\:2081); evaluating one input is the same thing written for a column, W\:2081\:1d40x. Evaluate the two cells below.", "Text"],
+Cell["The trained numbers (from ccn_nets, seed 1234; three decimals)", "Section"],
+Cell["feat = {\"own:none\",\"prev:none\",\"j:start\",\"v:slide\",\"a:it\",\"a:right\",\"a:2\",\"a:units\",\"a2:it_right\"};
+wl = {{0.145,0.088,0.119,0.024,0.079,0.204,0.116,0.164,0.000},{0.211,0.058,0.142,-0.005,0.041,0.316,0.145,0.123,0.000},{-0.036,-0.001,0.024,0.011,-0.006,-0.037,-0.025,-0.002,0.000},{0.007,-0.031,0.056,0.028,-0.015,-0.144,-0.052,-0.029,0.000},{0.002,-0.034,0.127,-0.001,-0.025,-0.142,-0.024,-0.034,0.000},{-0.055,-0.048,0.095,0.012,-0.025,-0.156,0.044,-0.098,0.000},{0.004,-0.046,0.116,0.025,-0.013,-0.150,-0.034,-0.063,0.000},{0.007,-0.039,0.131,0.028,-0.014,-0.143,-0.030,-0.067,0.000},{0.141,0.088,0.202,0.006,0.104,0.181,0.095,0.094,0.000},{0.033,-0.051,0.085,0.020,-0.016,-0.165,-0.026,-0.068,0.000},{-0.020,-0.035,0.095,0.048,-0.023,-0.158,-0.006,-0.089,0.000},{-0.005,-0.025,0.079,0.016,-0.012,-0.119,-0.033,0.005,0.000},{0.196,0.116,0.112,0.011,0.065,0.217,0.114,0.110,0.000},{0.192,0.076,0.161,0.011,0.057,0.198,0.109,0.126,0.000},{0.030,-0.037,0.099,0.021,-0.012,-0.159,-0.017,-0.040,0.000},{0.090,0.108,0.122,0.002,0.104,0.200,0.157,0.063,0.000},{0.173,0.087,0.108,0.010,0.075,0.210,0.105,0.171,0.000},{0.198,0.058,0.168,-0.006,0.064,0.194,0.127,0.163,0.000},{-0.019,-0.023,0.040,0.043,-0.005,-0.143,-0.038,-0.062,0.000},{0.111,0.115,0.146,0.081,0.083,0.170,0.139,0.093,0.000},{0.151,0.054,0.201,0.044,0.065,0.251,0.152,0.123,0.000},{-0.017,-0.026,0.091,0.041,-0.031,-0.120,-0.005,-0.028,0.000},{0.002,-0.075,0.130,0.056,-0.033,-0.154,-0.019,-0.079,0.000},{0.118,0.057,0.150,-0.001,0.043,0.207,0.135,0.123,0.000},{0.003,-0.028,0.075,0.015,-0.009,-0.121,-0.005,-0.040,0.000},{-0.060,-0.031,0.115,0.030,-0.014,-0.097,0.001,-0.086,0.000},{0.029,-0.036,0.056,0.017,0.016,-0.111,-0.030,0.002,0.000},{-0.010,-0.036,0.089,0.005,-0.016,-0.151,0.004,-0.038,0.000},{0.173,0.060,0.110,0.083,0.084,0.216,0.046,0.122,0.000},{0.186,0.056,0.135,0.042,0.080,0.216,0.120,0.122,0.000},{0.132,0.100,0.152,0.042,0.096,0.167,0.119,0.154,0.000},{0.025,-0.057,0.095,0.082,-0.038,-0.160,-0.003,-0.088,0.000}};  (* W1 transposed: its 9 lit columns, 32 x 9 *)
+b1 = {0.169,0.245,0.013,0.066,0.039,0.077,0.104,0.104,0.147,0.097,0.074,0.053,0.140,0.185,0.080,0.151,0.177,0.177,0.070,0.135,0.192,0.055,0.078,0.198,0.061,0.068,0.035,0.083,0.141,0.173,0.142,0.093};
+w2 = {{0.391,-0.144},{0.235,-0.435},{-0.101,0.078},{-0.417,0.130},{-0.225,0.311},{-0.572,0.955},{-0.487,-0.009},{-0.158,0.327},{0.016,-0.574},{-0.452,0.173},{-0.323,0.453},{-0.573,-0.187},{0.552,-0.104},{0.088,-0.335},{-0.287,0.230},{0.259,-0.344},{0.449,-0.001},{0.258,-0.191},{-0.325,0.396},{0.261,-0.736},{0.131,-0.316},{-0.032,0.512},{-0.470,0.385},{0.196,-0.253},{-0.235,0.166},{-0.064,0.863},{-0.356,0.319},{-0.554,-0.043},{0.635,-0.159},{0.171,-0.311},{-0.106,-0.716},{-0.505,0.643}};  (* W2, 32 x 2 *)
+b2 = {0.107,-0.107};
+", "Input"],
+Cell["The expression", "Section"],
+Cell["z1 = Total[Transpose[wl]] + b1; a1 = Ramp[z1]; z2 = a1 . w2 + b2; p = Exp[z2]/Total[Exp[z2]];
+red = RGBColor[0.78, 0.2, 0.15]; blue = RGBColor[0.15, 0.35, 0.75]; grey = GrayLevel[0.6];
+num[v_] := Style[NumberForm[v, {3, 2}, NumberPadding -> {\"\", \"0\"}, SignPadding -> True], Which[v > 0.004, red, v < -0.004, blue, True, GrayLevel[0.45]]];
+colv[v_] := MatrixForm[List /@ (num /@ v)];
+mat[m_] := MatrixForm[Map[num, m, {2}]];
+lab[e_, s_] := Labeled[e, Style[s, 11, GrayLevel[0.35]], Top];
+op[s_] := Style[s, 20, GrayLevel[0.3]];
+h[s_] := Style[s, 15, Bold, RGBColor[0.05, 0.2, 0.35]];
+tf[e_] := Style[TraditionalForm[e], 14];
+eq[l_, r_] := Row[{tf[l], \" = \", tf[r]}];
+dL[w_] := HoldForm[D[L, w]];
+a1cut = MatrixForm[List /@ MapThread[If[#1 < 0, Style[\"0\", grey], num[#2]] &, {z1, a1}]];
+general = eq[HoldForm[p], HoldForm[softmax[Transpose[Subscript[W, 2]] . \\[Sigma][Transpose[Subscript[W, 1]] . x + Subscript[b, 1]] + Subscript[b, 2]]]];
+dims = Style[\"W\\:2081\\[Transpose] is 32\\[Times]2048,  x \\[Element] {0,1}\\:00b2\\:2070\\:2074\\:2078,  b\\:2081 \\[Element] \\[DoubleStruckCapitalR]\\:00b3\\:00b2,  W\\:2082\\[Transpose] is 2\\[Times]32,  b\\:2082 \\[Element] \\[DoubleStruckCapitalR]\\:00b2;   \\[Sigma](z) = max(0, z) (ReLU);   softmax(z)\\:1d62 = e^z\\:1d62 / \\[CapitalSigma]\\:2c7c e^z\\:2c7c;   65,634 numbers in all\", 12, GrayLevel[0.3]];
+train = Grid[{
+  {Style[\"start\", 12, Italic], Row[{tf[HoldForm[Subscript[W, k]]], \" \\[Tilde] \", tf[HoldForm[NormalDistribution[0, Sqrt[2/Subscript[n, \"in\"]]]]]}], Style[\"He initialisation, seed 1234;  b\\:2096 = 0\", 12]},
+  {Style[\"forward\", 12, Italic], eq[HoldForm[Subscript[Z, 1]], HoldForm[X . Subscript[W, 1] + Subscript[b, 1]]], eq[HoldForm[P], HoldForm[softmax[\\[Sigma][Subscript[Z, 1]] . Subscript[W, 2] + Subscript[b, 2]]]]},
+  {Style[\"loss\", 12, Italic], eq[HoldForm[L], HoldForm[-(1/n) Sum[Sum[Subscript[y, i, c] Log[Subscript[p, i, c]], {c, 1, 2}], {i, 1, n}] + \\[Lambda]/2 (Norm[Subscript[W, 1]]^2 + Norm[Subscript[W, 2]]^2)]], Style[\"cross-entropy plus a small weight penalty\", 12]},
+  {Style[\"backpropagation\", 12, Italic], eq[HoldForm[Subscript[\\[Delta], 2]], HoldForm[(P - Y)/n]], Row[{eq[dL[Subscript[W, 2]], HoldForm[Transpose[Subscript[A, 1]] . Subscript[\\[Delta], 2] + \\[Lambda] Subscript[W, 2]]], \",   \", eq[dL[Subscript[b, 2]], HoldForm[Sum[Subscript[\\[Delta], 2, i], {i, 1, n}]]]}]},
+  {\"\", Row[{eq[HoldForm[Subscript[\\[Delta], 1]], HoldForm[Subscript[\\[Delta], 2] . Transpose[Subscript[W, 2]]]], \" \\[CircleDot] \", tf[HoldForm[\\[DoubleStruckOne][Subscript[Z, 1] >= 0]]]}], Row[{eq[dL[Subscript[W, 1]], HoldForm[Transpose[X] . Subscript[\\[Delta], 1] + \\[Lambda] Subscript[W, 1]]], \",   \", eq[dL[Subscript[b, 1]], HoldForm[Sum[Subscript[\\[Delta], 1, i], {i, 1, n}]]]}]},
+  {Style[\"Adam step\", 12, Italic], Row[{tf[HoldForm[m]], \" \\[LeftArrow] \", tf[HoldForm[Subscript[\\[Beta], 1] m + (1 - Subscript[\\[Beta], 1]) g]], \",   \", tf[HoldForm[v]], \" \\[LeftArrow] \", tf[HoldForm[Subscript[\\[Beta], 2] v + (1 - Subscript[\\[Beta], 2]) g^2]]}],
+    Row[{tf[HoldForm[\\[Theta]]], \" \\[LeftArrow] \", tf[HoldForm[\\[Theta] - \\[Eta] (m/(1 - Subscript[\\[Beta], 1]^t))/(Sqrt[v/(1 - Subscript[\\[Beta], 2]^t)] + \\[Epsilon])]]}]},
+  {Style[\"settings\", 12, Italic], Style[\"n = 2000 template parts \\[CenterDot] 12 epochs \\[CenterDot] batches of 64 \\[CenterDot] \\[Eta] = 0.005, \\[Beta]\\:2081 = 0.9, \\[Beta]\\:2082 = 0.999, \\[Epsilon] = 10\\:207b\\:2078, \\[Lambda] = 10\\:207b\\:2074;  g is the gradient of \\[Theta], for every W and b\", 12], SpanFromLeft}},
+  Alignment -> {Left, Center}, Spacings -> {2, 1.4}, Dividers -> {None, {False, True, True, True, False, True, True, False}}, FrameStyle -> GrayLevel[0.85]];
+layer1 = Row[{lab[MatrixForm[Map[num, wl, {2}], TableHeadings -> {None, Style[#, 9, GrayLevel[0.3]] & /@ feat}], \"W\\:2081\\[Transpose]: the 9 lit columns (of 2048)\"], op[\" \\[CenterDot] \"], lab[MatrixForm[List /@ ConstantArray[1, 9]], \"x (lit)\"], op[\" + \"], lab[colv[b1], \"b\\:2081\"], op[\" = \"], lab[colv[z1], \"z\\:2081\"], op[\"  \\[LongRightArrow]\\[Sigma]\\[LongRightArrow]  \"], lab[a1cut, \"a\\:2081 = \\[Sigma](z\\:2081)\"]}];
+layer2 = Row[{lab[Superscript[mat[w2], \"T\"], \"W\\:2082 (32 \\[Times] 2), transposed\"], op[\" \\[CenterDot] \"], lab[colv[a1], \"a\\:2081\"], op[\" + \"], lab[colv[b2], \"b\\:2082\"], op[\" = \"], lab[colv[z2], \"z\\:2082\"], op[\"  \\[LongRightArrow]softmax\\[LongRightArrow]  \"], lab[MatrixForm[List /@ {Style[Row[{\"object  \", NumberForm[100 p[[1]], {4, 2}], \"%\"}], Bold], Row[{\"other  \", NumberForm[100 p[[2]], {4, 2}], \"%\"}]}], \"p\"]}];
+Framed[Column[{
+  Style[\"SubjectNet: how it is trained, and the trained model that reads an input\", 19, Bold, RGBColor[0.05, 0.2, 0.35]],
+  h[\"1.  Training: finds W\\:2081, b\\:2081, W\\:2082, b\\:2082 (the rows of X are the n training inputs)\"], train,
+  h[\"2.  The trained model, used to evaluate an input x\"], general, dims,
+  h[\"3.  The trained model on \\[OpenCurlyDoubleQuote]slide it right 2 units\\[CloseCurlyDoubleQuote] (9 of the 2048 slots of x are 1)\"], layer1,
+  Style[ToString[Count[z1, _?Negative]] <> \" negative entries of z\\:2081 become 0 under \\[Sigma] = ReLU (grey). Only the lit columns of W\\:2081\\[Transpose] matter, because every other entry of x is 0.\", 11, Italic, GrayLevel[0.4]],
+  layer2,
+  Style[\"\\[Copyright] Computational Classnotes \\[CenterDot] CC BY-NC-SA 4.0\", 10, GrayLevel[0.5]]}, Spacings -> 1.6, Alignment -> Left], FrameStyle -> GrayLevel[0.85], FrameMargins -> 22, Background -> White]
+", "Input"],
+Cell["\:00a9 Computational Classnotes \:00b7 CC BY-NC-SA 4.0", "Text"]
+}, StyleDefinitions -> "Default.nb"]

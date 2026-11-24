@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CCN Net Diagrams — editor</title>
+<style>
+:root{--bg:#f6f4ee;--panel:#fffdf8;--ink:#1d1b16;--muted:#6b665a;--line:#d9d3c4;--accent:#7a2e1f;--accent2:#2d4a7a;--sel:#c2410c;--ok:#15803d;
+--purple:#534AB7;--purpleF:#EEEDFE;--teal:#0F6E56;--tealF:#E1F5EE;--coral:#993C1D;--coralF:#FAECE7;--amber:#EF9F27;--grey:#73726c;--greyF:#ecebe6}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+header{display:flex;align-items:baseline;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font:600 19px/1 system-ui;margin:0}
+header .sub{color:var(--muted);font-size:12px}
+main{display:grid;grid-template-columns:1fr 420px;min-height:0}
+#stage{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+button{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--ink)}
+button:hover{border-color:#b9b09a;background:#fbf8f0}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.primary:hover{background:#651f13}
+.sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+svg#canvas{flex:1;width:100%;min-height:0;touch-action:none;
+  background:radial-gradient(circle,#e2ddcf 1px,transparent 1.3px) 0 0/24px 24px,#fbfaf6}
+aside{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:16px}
+section h2{font:600 11px/1 system-ui;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+input[type=text],input[type=number],select,textarea{width:100%;font:13px system-ui;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+textarea{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;min-height:220px;resize:vertical;white-space:pre}
+.insp label,.set label{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.hint{font-size:12px;color:var(--muted)}
+.hint code,.mono{font:11.5px ui-monospace,monospace}
+.err{color:#b91c1c;font-size:12.5px;margin-top:4px;white-space:pre-wrap}
+.warn{color:#a16207;font-size:12.5px;margin-top:4px;white-space:pre-wrap}
+.okline{color:var(--ok);font-size:12.5px;margin-top:4px}
+.toolbar select{width:auto;font-size:13px;padding:5px 8px}
+body.lang-python .wl-only{display:none}body:not(.lang-python) .py-only{display:none}
+.stat{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12.5px;margin-top:6px}
+.stat b{font-weight:600}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.actions button{padding:8px 4px;font-size:12.5px}
+footer{padding:6px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;background:var(--panel)}
+.legend{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--muted);background:#fffdf8d9;padding:3px 8px;border-radius:4px;pointer-events:none}
+/* diagram */
+.wire{fill:none;stroke:var(--grey);stroke-width:1.4}
+.wire.sel{stroke:var(--sel);stroke-width:2.6}
+.wire-hit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer}
+.fan{stroke-width:.7;pointer-events:none}
+.node{cursor:move}
+.node.sel .outline{stroke:var(--sel)!important;stroke-width:2.4!important}
+.lbl{font:12px system-ui;text-anchor:middle;dominant-baseline:central;pointer-events:none;fill:#3d3d3a}
+.lblb{font:600 14px system-ui;dominant-baseline:central;pointer-events:none;fill:#2c2c2a}
+.port{fill:#fff;stroke:#9a9384;stroke-width:1.2;cursor:crosshair;opacity:0;transition:opacity .12s}
+svg:hover .port{opacity:.9}
+.port:hover{fill:var(--sel);stroke:var(--sel);opacity:1}
+.grip{fill:transparent}
+.node.sel .grip{fill:#c2410c18}
+.temp{fill:none;stroke:var(--sel);stroke-width:2;stroke-dasharray:5 4;pointer-events:none}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="../index.html" style="color:inherit;text-decoration:none">CCN Net Diagrams</a></h1>
+  <span class="sub">draw a neural net, small or a transformer · reads left → right · Diagram → Code writes a Wolfram notebook (.nb) or a Python script (.py) that trains it</span>
+</header>
+<main>
+  <div id="stage">
+    <div class="toolbar">
+      <button data-add="feature" title="A feature source: a group of words from a motion part">+ Feature</button>
+      <button data-add="hash" title="Hashes its feature words into slots">+ Hash</button>
+      <button data-add="slots" title="The input vector">+ Slots</button>
+      <button data-add="dense" title="A layer of units with an activation">+ Layer</button>
+      <button data-add="dropout" title="Dropout (version B only in this issue)">+ Dropout</button>
+      <button data-add="concat" title="Joins two or more branches side by side (version B only)">+ Join</button>
+      <button data-add="softmax" title="The output: one unit per class, softmax">+ Softmax</button>
+      <select id="addSeq" title="Elements for sequence nets: transformers, as in tensor-algebra-nets">
+        <option value="">+ Sequence element…</option>
+        <option value="tokens">Tokens (input)</option><option value="numbers">Numbers per token (input)</option>
+        <option value="embed">Embedding</option><option value="project">Per-token layer</option><option value="add">Add</option>
+        <option value="encoder">Encoder</option><option value="decoder">Decoder</option>
+        <option value="pick">Pick a position</option><option value="pool">Pool</option>
+        <option value="seqsoftmax">Softmax per token (output)</option><option value="possoftmax">Softmax over positions (output)</option>
+        <option value="regression">Regression (output)</option>
+      </select>
+      <span class="sep"></span>
+      <button id="bDel">Delete</button>
+      <button id="bUndo">Undo</button>
+      <button id="bClear">Clear</button>
+      <button id="bFit">Fit</button>
+      <span class="sep"></span>
+      <button id="bSvg">Export SVG</button>
+      <button id="bSave">Save</button>
+      <button id="bLoad">Open</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+      <select id="exSel" title="Open an example"><option value="">Examples\u2026</option></select>
+    </div>
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
+      <g id="world"><g id="gw"></g><g id="gn"></g><path id="temp" class="temp" d=""/></g>
+    </svg>
+    <div class="legend">drag an element to move · drag from a port (○) to another port to draw a wire · double-click to edit · Del deletes · scroll to zoom · drag the background to pan</div>
+  </div>
+
+  <aside>
+    <section>
+      <h2>The net</h2>
+      <div id="summary" class="hint"></div>
+      <div class="actions">
+        <button class="primary" id="bD2C">Diagram → Code</button>
+        <button class="primary" id="bNb">Download .nb</button>
+        <button class="primary" id="bCopy">Copy code</button>
+      </div>
+    </section>
+
+    <section class="insp">
+      <h2>Selection</h2>
+      <div id="insp" class="hint">Nothing selected.</div>
+    </section>
+
+    <section class="set">
+      <h2>Training settings</h2>
+      <label>Language</label>
+      <select id="sLang">
+        <option value="wolfram">Wolfram: a notebook (.nb), our own code and NetTrain</option>
+        <option value="python">Python: a script (.py), our own code (python/ccn_nets)</option>
+      </select>
+      <label id="lName">Notebook name</label><input type="text" id="sName" value="SubjectNetFromDiagram">
+      <label>Data</label>
+      <select id="sData">
+        <option value="subjectnet">SubjectNet's template data</option>
+        <option value="own">My own data</option>
+      </select>
+      <div class="wl-only"><label>Where SubjectNet.nb is (a Wolfram expression)</label>
+      <input type="text" id="sPath" class="mono" value='FileNameJoin[{Quiet@Check[NotebookDirectory[], Directory[]], "SubjectNet.nb"}]'></div>
+      <div class="py-only"><label>Where the repository's python/ folder is, from the script's folder</label>
+      <input type="text" id="sPyPath" class="mono" value="."></div>
+      <div class="row">
+        <div><label>Epochs</label><input type="number" id="sEpochs" min="1" value="12"></div>
+        <div><label>Batch size</label><input type="number" id="sBatch" min="1" value="64"></div>
+        <div><label>Seed</label><input type="number" id="sSeed" value="1234"></div>
+      </div>
+      <div class="row">
+        <div><label>Learning rate (Adam)</label><input type="text" id="sLr" value="0.005"></div>
+        <div><label>L2</label><input type="text" id="sL2" value="0.0001"></div>
+      </div>
+      <label>Loss</label><div class="hint">Cross-entropy on the softmax outputs (fixed by the Softmax element).</div>
+      <div class="row wl-only" style="margin-top:6px">
+        <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="sA" checked> version A, our own code</label>
+        <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="sB" checked> version B, NetTrain</label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <textarea id="code" readonly spellcheck="false" placeholder="Diagram → Code writes the notebook's cells here."></textarea>
+      <div class="hint wl-only">Downloaded as a notebook of Code cells. Save it beside <code>nets/SubjectNet.nb</code> to use SubjectNet's data, or change the path above.</div>
+      <div class="hint py-only">Downloaded as a Python script. Save it in the repository's <code>python/</code> folder (or change the path above) and run <code>python3 &lt;name&gt;.py</code>; it needs only NumPy. With your own data, write <code>my_data.py</code> beside it, as the script's first lines say.</div>
+    </section>
+  </aside>
+</main>
+<footer><span>By Dara O Shayda and Hikari Noor Hoshino (星野ヌール), AI System Programming Group · © Computational Classnotes · CC BY-NC-SA 4.0</span><span>elements: feature · hash · slots · layer · dropout · join · softmax</span></footer>
+
+<script id="core">
+/* ================= CORE: the diagram read as a net, and the notebook written from it ================= */
+const NetCore = (() => {
+  const FEATURE_KEYS = ['Own', 'Verb', 'After', 'Prev', 'Join'];
+  const FEATURE_LABEL = {Own:'Own words', Verb:'Verb', After:'Words after', Prev:'Words before', Join:'Joining word'};
+  const ACTS = ['ReLU', 'GELU', 'Tanh', 'Sigmoid', 'None'];
+  const ins = n => n.kind === 'hash' || n.kind === 'concat' || n.kind === 'add' ? n.nIn : n.kind === 'decoder' ? 2 : ['feature', 'tokens', 'numbers'].includes(n.kind) ? 0 : 1;
+  const outs = n => ['softmax', 'seqsoftmax', 'possoftmax', 'regression'].includes(n.kind) ? 0 : 1;
+  const classesOf = n => String(n.classes || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  /* Read the drawing as a net. Returns {errors, warnings, spec}. */
+  function compile(D) {
+    if (isSeq(D)) return compileSeq(D);
+    const errors = [], warnings = [];
+    const byId = Object.fromEntries(D.nodes.map(n => [n.id, n]));
+    const inWires = id => D.wires.filter(w => w.to.node === id).sort((a, b) => a.to.port - b.to.port);
+    const outWires = id => D.wires.filter(w => w.from.node === id);
+    const sms = D.nodes.filter(n => n.kind === 'softmax');
+    if (!sms.length) { errors.push('Add a Softmax element: it is the output of the net.'); return {errors, warnings}; }
+    if (sms.length > 1) { errors.push('Only one Softmax output is supported.'); return {errors, warnings}; }
+    const sm = sms[0], classes = classesOf(sm);
+    if (classes.length < 2) errors.push('The Softmax element needs at least two classes, separated by commas.');
+    if (new Set(classes).size !== classes.length) errors.push('The class names must differ.');
+    // everything the output depends on
+    const need = new Set(), stack = [sm.id];
+    while (stack.length) { const id = stack.pop(); if (need.has(id)) continue; need.add(id); inWires(id).forEach(w => stack.push(w.from.node)); }
+    const used = D.nodes.filter(n => need.has(n.id));
+    D.nodes.filter(n => !need.has(n.id)).forEach(n => warnings.push(`${describe(n)} is not connected to the output and is left out.`));
+    for (const n of used) {
+      const k = ins(n), ws = inWires(n.id);
+      for (let i = 0; i < k; i++) if (!ws.some(w => w.to.port === i) && n.kind !== 'slots')
+        errors.push(`${describe(n)}: input ${k > 1 ? i + 1 + ' ' : ''}is not connected.`);
+    }
+    const slots = used.filter(n => n.kind === 'slots');
+    if (slots.length !== 1) { errors.push(slots.length ? 'Use one Slots element as the input of the net.' : 'Add a Slots element: it is the input vector of the net.'); return {errors, warnings}; }
+    const S = slots[0], hashW = inWires(S.id);
+    let input;
+    if (hashW.length) {
+      const h = byId[hashW[0].from.node];
+      if (h.kind !== 'hash') { errors.push('Slots can only be fed by a Hash element.'); return {errors, warnings}; }
+      const feats = inWires(h.id).map(w => byId[w.from.node]);
+      const bad = feats.filter(f => f.kind !== 'feature');
+      if (bad.length) errors.push('Only Feature elements can feed a Hash element.');
+      const keys = feats.filter(f => f.kind === 'feature').map(f => f.key);
+      const dup = keys.filter((k, i) => keys.indexOf(k) !== i);
+      if (dup.length) warnings.push(`The feature ${FEATURE_LABEL[dup[0]]} is fed in twice; once is enough.`);
+      if (+h.slots !== +S.size) warnings.push(`The Hash has ${h.slots} slots but the Slots element has ${S.size}; ${h.slots} is used.`);
+      input = {type:'hashed', features:[...new Set(keys)], dim:+h.slots};
+    } else input = {type:'vector', dim:+S.size};
+    if (!(input.dim >= 1)) errors.push('The number of slots must be a positive whole number.');
+    // order the layers between the input and the output
+    const layerNodes = used.filter(n => ['dense', 'dropout', 'concat', 'softmax'].includes(n.kind));
+    for (const n of used) if (['feature', 'hash'].includes(n.kind) && outWires(n.id).some(w => byId[w.to.node] && !['hash', 'slots'].includes(byId[w.to.node].kind)))
+      errors.push(`${describe(n)} can only feed ${n.kind === 'feature' ? 'a Hash' : 'Slots'}.`);
+    const order = [], seen = new Set(), visiting = new Set();
+    const visit = id => { if (seen.has(id)) return true; if (visiting.has(id)) return false; visiting.add(id);
+      for (const w of inWires(id)) if (!visit(w.from.node)) return false; visiting.delete(id); seen.add(id); order.push(id); return true; };
+    if (!visit(sm.id)) { errors.push('The wires go round in a loop.'); return {errors, warnings}; }
+    const layers = order.map(id => byId[id]).filter(n => layerNodes.includes(n));
+    const src = id => id === S.id ? 'input' : id;
+    const graph = layers.map(n => ({id:n.id, kind:n.kind, units:+n.units, act:n.act, rate:+n.rate, classes:n.kind === 'softmax' ? classes : undefined,
+      from:inWires(n.id).map(w => src(w.from.node))}));
+    for (const g of graph) for (const f of g.from) if (f !== 'input' && !layers.some(n => n.id === f)) errors.push(`${describe(byId[f])} cannot feed a layer.`);
+    for (const g of graph) {
+      if (g.kind === 'dense' && !(g.units >= 1)) errors.push('A layer needs a positive number of units.');
+      if (g.kind === 'dropout' && !(g.rate >= 0 && g.rate < 1)) errors.push('A dropout rate lies between 0 and 1.');
+    }
+    // sizes and weights
+    const size = {input:input.dim}; let params = 0;
+    for (const g of graph) {
+      const inSize = g.from.reduce((a, f) => a + (size[f] || 0), 0);
+      g.inSize = inSize;
+      if (g.kind === 'dense') { size[g.id] = g.units; params += inSize * g.units + g.units; }
+      else if (g.kind === 'softmax') { size[g.id] = classes.length; params += inSize * classes.length + classes.length; }
+      else size[g.id] = inSize;
+      g.weights = g.kind === 'dense' ? inSize * g.units + g.units : g.kind === 'softmax' ? inSize * classes.length + classes.length : 0;
+    }
+    // a chain: each layer fed by the one before it, nothing branches
+    const chain = graph.every((g, i) => g.kind !== 'concat' && g.from.length === 1 && g.from[0] === (i ? graph[i - 1].id : 'input'))
+      && graph.every(g => graph.filter(h => h.from.includes(g.id)).length <= (g.kind === 'softmax' ? 0 : 1));
+    if (!chain) warnings.push('The net branches: version B is written with NetGraph; version A (our own code) handles chains only in this issue and is left out.');
+    if (chain && graph.some(g => g.kind === 'dropout')) warnings.push('Version A leaves dropout out in this issue; version B keeps it.');
+    return {errors, warnings, spec:{input, graph, chain, classes, params}};
+  }
+  const describe = n => ({feature:`Feature “${FEATURE_LABEL[n.key] || n.key}”`, hash:'Hash', slots:'Slots', dense:`Layer (${n.units} ${n.act})`,
+    dropout:`Dropout ${n.rate}`, concat:'Join', softmax:'Softmax', tokens:`Tokens \u201c${n.name}\u201d`, numbers:`Numbers \u201c${n.name}\u201d`, embed:'Embedding',
+    project:'Per-token layer', add:'Add', encoder:'Encoder', decoder:'Decoder', seqsoftmax:'Softmax per token', pick:'Pick', pool:'Pool',
+    possoftmax:'Softmax over positions', regression:'Regression'})[n.kind] || n.kind;
+
+  /* ---------- Wolfram text ---------- */
+  const wlStr = s => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  const wlNum = x => { const s = String(+x); return /e/.test(s) ? s.replace(/e([+-]?\d+)/, ' 10.^$1').replace(/^(\S+) /, '$1*') : (s.includes('.') ? s : s + '.'); };
+  const wlInt = x => String(Math.round(+x));
+  const actLayer = {ReLU:'Ramp', GELU:'ElementwiseLayer["GELU"]', Tanh:'Tanh', Sigmoid:'LogisticSigmoid', None:null};
+  const FEATURE_WL = {
+    Own:'If[own === {}, {"own:none"}, Join[("o:" <> #) & /@ own, {"oL:" <> Last[own]}]]',
+    Prev:'If[own === {}, If[prev === {}, {"prev:none"}, ("p:" <> #) & /@ Take[prev, -Min[4, Length[prev]]]], {}]',
+    Join:'{"j:" <> r["Join"]}',
+    Verb:'{"v:" <> r["Verb"]}',
+    After:'("a:" <> #) & /@ Take[after, UpTo[4]],\n   If[Length[after] >= 2, {"a2:" <> after[[1]] <> "_" <> after[[2]]}, {}]',
+  };
+  const SUBJECTNET = s => s.chain && s.input.type === 'hashed' && s.input.dim === 2048 && FEATURE_KEYS.every(k => s.input.features.includes(k))
+    && s.graph.length === 2 && s.graph[0].kind === 'dense' && s.graph[0].units === 32 && s.graph[0].act === 'ReLU'
+    && s.classes.join() === 'object,other';
+
+  function layerWL(g) {
+    if (g.kind === 'dense') { const a = actLayer[g.act]; return a ? [`LinearLayer[${g.units}]`, a] : [`LinearLayer[${g.units}]`]; }
+    if (g.kind === 'dropout') return [`DropoutLayer[${wlNum(g.rate)}]`];
+    if (g.kind === 'concat') return ['CatenateLayer[]'];
+    return [`LinearLayer[${g.classes.length}]`, 'SoftmaxLayer[]'];
+  }
+
+  /* The notebook's cells: [style, text] */
+  function cells(D, spec, set) {
+    if (spec.seq) return seqCells(D, spec, set);
+    const C = [], add = (style, text) => C.push([style, text]);
+    const s = spec, dim = s.input.dim, own = set.data === 'own', hashed = s.input.type === 'hashed';
+    const doA = set.versionA && s.chain, doB = set.versionB;
+    const date = (set.date || new Date().toISOString()).slice(0, 16).replace('T', ' ');
+    add('Title', `${set.name}: a net generated from a diagram`);
+    add('Text', `Generated by the CCN Net Diagram Editor (editor/net-diagram-editor.html) on ${date} UTC.\n` +
+      `The net: ${summaryText(s)}.\n` +
+      `Versions: ${[doA ? 'A, our own code (forward pass, backpropagation and Adam written out, no Wolfram neural-net functions)' : null,
+        doB ? `B, Wolfram's ${s.chain ? 'NetChain' : 'NetGraph'} and NetTrain` : null].filter(Boolean).join('; ') || 'none chosen'}.`);
+    add('Text', own ? 'Data: your own. Define the variables named in the Data section before evaluating the notebook.'
+      : 'Data: SubjectNet\'s template data. The notebook evaluates SubjectNet.nb first, which loads MotionPhrases.nb.');
+    add('Text', 'By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)\nAI System Programming Group');
+
+    add('Section', 'The diagram');
+    add('Code', `(* The diagram as the editor saved it; open it again in the editor with Open *)\ndiagramJSON = ${wlStr(JSON.stringify({diagram:D, settings:set}))};`);
+    add('Code', `netSpec = <|\n  "Input" -> <|"Type" -> ${wlStr(s.input.type)}, "Slots" -> ${dim}${hashed ? `, "Features" -> {${s.input.features.map(wlStr).join(', ')}}` : ''}|>,\n` +
+      `  "Layers" -> {${s.graph.map(g => g.kind === 'dense' ? `{"Layer", ${g.units}, ${wlStr(g.act)}}` : g.kind === 'dropout' ? `{"Dropout", ${wlNum(g.rate)}}`
+        : g.kind === 'concat' ? '{"Join"}' : `{"Softmax", ${g.classes.length}}`).join(', ')}},\n` +
+      `  "Classes" -> {${s.classes.map(wlStr).join(', ')}},\n  "Weights" -> ${s.params},\n` +
+      `  "Training" -> <|"Epochs" -> ${wlInt(set.epochs)}, "BatchSize" -> ${wlInt(set.batch)}, "LearningRate" -> ${wlNum(set.lr)}, "L2" -> ${wlNum(set.l2)}, "Seed" -> ${wlInt(set.seed)}|>|>;`);
+
+    add('Section', 'Data');
+    if (!own) add('Code', `(* SubjectNet.nb makes trainData and testData: pairs of a motion-part record and its label *)\nsubjectNetFile = ${set.path};\nNotebookEvaluate[subjectNetFile];`);
+    add('Code', `dim = ${dim};\nclasses = {${s.classes.map(wlStr).join(', ')}};`);
+    if (hashed) {
+      const parts = s.input.features.map(k => FEATURE_WL[k]);
+      add('Code', `(* The features drawn in the diagram, hashed into ${dim} slots of 0s and 1s, as in SubjectNet *)\n` +
+        `diagramFeatures[r_] := Module[{own = r["Own"], prev = r["Prev"], after = r["After"]},\n  Join[\n   ${parts.join(',\n   ') || '{}'}]];\n` +
+        `diagramVector[r_] := Module[{v = ConstantArray[0., dim]},\n  Scan[(v[[Mod[Hash[#, "CRC32"], dim] + 1]] = 1.) &, diagramFeatures[r]]; v];`);
+    }
+    if (own) {
+      add('Code', hashed
+        ? '(* Your data: trainRecords and testRecords, lists of {record, class}; a record is an Association with the keys\n   "Own", "Verb", "After", "Prev" and "Join", as MotionSubject gives *)\nIf[! ValueQ[trainRecords] || ! ValueQ[testRecords], Print["Define trainRecords and testRecords first."]];\n' +
+          'xTrain = diagramVector /@ trainRecords[[All, 1]]; labelsTrain = trainRecords[[All, 2]];\nxTest = diagramVector /@ testRecords[[All, 1]]; labelsTest = testRecords[[All, 2]];'
+        : `(* Your data: xTrainData and xTestData, lists of {vector of length ${dim}, class} *)\nIf[! ValueQ[xTrainData] || ! ValueQ[xTestData], Print["Define xTrainData and xTestData first."]];\n` +
+          'xTrain = N[xTrainData[[All, 1]]]; labelsTrain = xTrainData[[All, 2]];\nxTest = N[xTestData[[All, 1]]]; labelsTest = xTestData[[All, 2]];');
+    } else {
+      if (!hashed && dim !== 2048) add('Code', `(* SubjectNet's featureVector gives 2,048 slots, but the diagram's Slots element has ${dim} *)\nPrint["The Slots element should have 2048 slots for SubjectNet's data, or be fed by a Hash."];`);
+      add('Code', (hashed ? 'xTrain = diagramVector /@ trainData[[All, 1]];' : 'xTrain = featureVector /@ trainData[[All, 1]];  (* SubjectNet\'s own 2,048 slots *)') +
+        ' labelsTrain = trainData[[All, 2]];\n' +
+        (hashed ? 'xTest = diagramVector /@ testData[[All, 1]];' : 'xTest = featureVector /@ testData[[All, 1]];') + ' labelsTest = testData[[All, 2]];');
+      if (hashed) add('Code', '(* Is the diagram\'s input the same as SubjectNet\'s featureVector? (True when all five features and 2,048 slots are drawn) *)\n' +
+        'sameInputAsSubjectNet = (diagramVector /@ trainData[[;; 50, 1]]) === (featureVector /@ trainData[[;; 50, 1]])');
+    }
+    add('Code', 'yTrain = Function[l, N[Boole[# === l] & /@ classes]] /@ labelsTrain;\n{Length[xTrain], Length[xTest], Counts[labelsTrain]}');
+
+    if (doB) {
+      add('Section', `Version B: Wolfram's ${s.chain ? 'NetChain' : 'NetGraph'} and NetTrain`);
+      let net;
+      if (s.chain) net = `netB = NetChain[{${s.graph.flatMap(layerWL).join(', ')}}, "Input" -> dim,\n   "Output" -> NetDecoder[{"Class", classes}]];`;
+      else {
+        const nm = g => wlStr('n' + (s.graph.indexOf(g) + 1));
+        const layers = s.graph.map(g => { const L = layerWL(g); return `${nm(g)} -> ${L.length > 1 ? `NetChain[{${L.join(', ')}}]` : L[0]}`; });
+        const name = id => id === 'input' ? 'NetPort["Input"]' : nm(s.graph.find(g => g.id === id));
+        const conns = s.graph.map(g => `${g.from.length > 1 ? '{' + g.from.map(name).join(', ') + '}' : name(g.from[0])} -> ${nm(g)}`);
+        conns.push(`${nm(s.graph[s.graph.length - 1])} -> NetPort["Output"]`);
+        net = `netB = NetGraph[<|${layers.join(',\n    ')}|>,\n   {${conns.join(', ')}},\n   "Input" -> dim, "Output" -> NetDecoder[{"Class", classes}]];`;
+      }
+      add('Code', net + '\nInformation[netB, "ArraysTotalElementCount"]');
+      add('Code', `{timeB, trainedB} = AbsoluteTiming[NetTrain[netB, Thread[xTrain -> labelsTrain], MaxTrainingRounds -> ${wlInt(set.epochs)}, BatchSize -> ${wlInt(set.batch)},\n` +
+        `    Method -> {"ADAM", "LearningRate" -> ${wlNum(set.lr)}, "L2Regularization" -> ${wlNum(set.l2)}}, RandomSeeding -> ${wlInt(set.seed)},\n    TargetDevice -> "CPU", TrainingProgressReporting -> None]];\n` +
+        'classifyB = Function[x, trainedB[x]];\ntimeB');
+    }
+    if (doA) {
+      const dense = s.graph.filter(g => g.kind === 'dense' || g.kind === 'softmax');
+      const sizes = [dim, ...dense.map(g => g.kind === 'dense' ? g.units : s.classes.length)];
+      const acts = dense.filter(g => g.kind === 'dense').map(g => g.act);
+      add('Section', 'Version A: our own code');
+      add('Code', `(* The layers of the diagram: sizes from input to output, one activation per hidden layer; the last layer is softmax.\n   Only matrix arithmetic is used: Dot, Exp, Log, Total, Transpose${s.graph.some(g => g.kind === 'dropout') ? '. Dropout is left out of this version' : ''} *)\n` +
+        `sizesA = {${sizes.join(', ')}};\nactsA = {${acts.map(wlStr).join(', ')}};\n` +
+        `{epochsA, batchA, lrA, l2A, seedA} = {${wlInt(set.epochs)}, ${wlInt(set.batch)}, ${wlNum(set.lr)}, ${wlNum(set.l2)}, ${wlInt(set.seed)}};`);
+      add('Code', GENERIC_A);
+      add('Code', '{timeA, trainedA} = AbsoluteTiming[trainGen[xTrain, yTrain]];\n' +
+        'classifyA = Function[x, classes[[First@Ordering[-First[predictGen[trainedA["Params"], {x}]], 1]]]];\n' +
+        'ListLinePlot[trainedA["LossHistory"], AxesLabel -> {"epoch", "loss"}, PlotLabel -> "Version A: training loss"]');
+    }
+
+    add('Section', 'Checks');
+    const rows = [`{"", ${doA ? '"Version A"' : ''}${doA && doB ? ', ' : ''}${doB ? '"Version B"' : ''}}`];
+    const both = (a, b) => [doA ? a : null, doB ? b : null].filter(x => x !== null).join(', ');
+    rows.push(`{"Weights in the diagram", ${both(s.params, s.params)}}`);
+    rows.push(`{"Weights in the trained net", ${both('Total[(Times @@ Dimensions[#["W"]]) + Length[#["b"]] & /@ trainedA["Params"]]', 'Information[trainedB, "ArraysTotalElementCount"]')}}`);
+    rows.push(`{"Training time (s)", ${both('timeA', 'timeB')}}`);
+    rows.push(`{"Accuracy on the test data", ${both('N@Mean[Boole[MapThread[classifyA[#1] === #2 &, {xTest, labelsTest}]]]', 'N@Mean[Boole[MapThread[classifyB[#1] === #2 &, {xTest, labelsTest}]]]')}}`);
+    if (doA) rows.push(`{"Gradient check, largest difference", ${both('gradientCheckGen[]', '"—"')}}`);
+    if (doA || doB) add('Code', `Grid[{${rows.join(',\n   ')}}, Frame -> All, Alignment -> Left]`);
+    if (doA && doB) add('Code', '(* Do the two versions decide alike on the test data? *)\nN@Mean[Boole[MapThread[classifyA[#1] === classifyB[#2] &, {xTest, xTest}]]]');
+    if (!own && hashed) {
+      add('Code', '(* The trained nets as subject checks for MotionPhrases: MotionParse[text, "SubjectCheck" -> SubjectCheckFromDiagramA] *)\n' +
+        (doA ? 'SubjectCheckFromDiagramA = Function[r, classifyA[diagramVector[r]]];\n' : '') +
+        (doB ? 'SubjectCheckFromDiagramB = Function[r, classifyB[diagramVector[r]]];\n' : '') +
+        (s.classes.join() === 'object,other' ? `{${both('accuracy[SubjectCheckFromDiagramA, testData]', 'accuracy[SubjectCheckFromDiagramB, testData]')}}` : 'Null'));
+    }
+    if (!own && doA && SUBJECTNET(s) && +set.epochs === 12 && +set.batch === 64 && +set.lr === 0.005 && +set.l2 === 0.0001 && +set.seed === 1234)
+      add('Code', '(* This diagram is SubjectNet itself, with its settings: version A should match SubjectNet\'s own version A, modelA *)\n' +
+        'Max[Abs[Flatten[{trainedA["Params"][[1]]["W"] - modelA["Params"]["W1"], trainedA["Params"][[2]]["W"] - modelA["Params"]["W2"]}]]]');
+    add('Text', '© Computational Classnotes · CC BY-NC-SA 4.0');
+    return C;
+  }
+
+  const GENERIC_A = `actF = <|"ReLU" -> (# UnitStep[#] &), "GELU" -> (# (1 + Erf[#/Sqrt[2.]])/2 &), "Tanh" -> Tanh, "Sigmoid" -> LogisticSigmoid, "None" -> Identity|>;
+actD = <|"ReLU" -> (UnitStep[#1] &), "GELU" -> ((1 + Erf[#1/Sqrt[2.]])/2 + #1 Exp[-#1^2/2]/Sqrt[2. Pi] &), "Tanh" -> (1 - #2^2 &), "Sigmoid" -> (#2 (1 - #2) &), "None" -> (1. &)|>;
+addRow[m_, b_] := m + ConstantArray[b, Length[m]];
+softmaxRows[z_] := With[{e = Exp[z - Max /@ z]}, e/Total[e, {2}]];
+
+initGen[sizes_, seed_] := (SeedRandom[seed];
+  Table[<|"W" -> RandomVariate[NormalDistribution[0, Sqrt[2./sizes[[k]]]], {sizes[[k]], sizes[[k + 1]]}],
+    "b" -> ConstantArray[0., sizes[[k + 1]]]|>, {k, Length[sizes] - 1}]);
+
+(* Forward pass: Z are the sums before the activation, A the outputs of each layer (A[[1]] is the input) *)
+forwardGen[p_, x_] := Module[{a = x, zs = {}, as = {x}, z, nL = Length[p]},
+  Do[z = addRow[a . p[[k]]["W"], p[[k]]["b"]];
+   a = If[k == nL, softmaxRows[z], actF[actsA[[k]]][z]];
+   AppendTo[zs, z]; AppendTo[as, a], {k, nL}];
+  <|"Z" -> zs, "A" -> as|>];
+predictGen[p_, x_] := Last[forwardGen[p, x]["A"]];
+
+lossGen[p_, x_, y_, lambda_] := With[{pr = predictGen[p, x]},
+  -Mean[Total[y Log[pr + 10.^-12], {2}]] + lambda/2 Total[Total[#["W"]^2, 2] & /@ p]];
+
+(* Backpropagation, written out, from the last layer to the first *)
+gradGen[p_, x_, y_, lambda_] := Module[{f = forwardGen[p, x], n = Length[x], nL = Length[p], dz, g},
+  g = ConstantArray[0, nL];
+  dz = (Last[f["A"]] - y)/n;
+  Do[
+   g[[k]] = <|"W" -> Transpose[f["A"][[k]]] . dz + lambda p[[k]]["W"], "b" -> Total[dz]|>;
+   If[k > 1, dz = (dz . Transpose[p[[k]]["W"]]) actD[actsA[[k - 1]]][f["Z"][[k - 1]], f["A"][[k]]]],
+   {k, nL, 1, -1}];
+  g];
+
+(* Adam, written out *)
+trainGen[x_, y_] := Module[{p = initGen[sizesA, seedA], m, v, t = 0, b1 = 0.9, b2 = 0.999, eps = 10.^-8, g, idx,
+   history = {}},
+  m = Map[0. # &, p, {2}]; v = m;
+  Do[
+   idx = Partition[RandomSample[Range[Length[x]]], UpTo[batchA]];
+   Do[
+    t++;
+    g = gradGen[p, x[[b]], y[[b]], l2A];
+    Do[
+     m[[k]] = Association[KeyValueMap[#1 -> b1 m[[k]][#1] + (1 - b1) #2 &, g[[k]]]];
+     v[[k]] = Association[KeyValueMap[#1 -> b2 v[[k]][#1] + (1 - b2) #2^2 &, g[[k]]]];
+     p[[k]] = Association[KeyValueMap[#1 -> p[[k]][#1] - lrA (m[[k]][#1]/(1 - b1^t))/(Sqrt[v[[k]][#1]/(1 - b2^t)] + eps) &,
+        p[[k]]]],
+     {k, Length[p]}],
+    {b, idx}];
+   AppendTo[history, lossGen[p, x, y, l2A]],
+   {epochsA}];
+  <|"Params" -> p, "LossHistory" -> history|>];
+
+(* The written-out gradient against small finite differences, on a small net of the same shape *)
+gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {Last[sizesA]}], x, y, p, g, e = 10.^-5, pairs},
+  SeedRandom[5];
+  x = RandomReal[{0, 1}, {6, 10}];
+  y = N[IdentityMatrix[Last[sizesA]][[RandomInteger[{1, Last[sizesA]}, 6]]]];
+  p = initGen[sz, 9]; g = gradGen[p, x, y, 0.01];
+  pairs = Flatten[Table[With[{pos = RandomInteger[{1, #}] & /@ Dimensions[p[[k]][key]]},
+      {(lossGen[ReplacePart[p, {k, key, Sequence @@ pos} -> Extract[p[[k]][key], pos] + e], x, y, 0.01] -
+          lossGen[ReplacePart[p, {k, key, Sequence @@ pos} -> Extract[p[[k]][key], pos] - e], x, y, 0.01])/(2 e),
+       Extract[g[[k]][key], pos]}],
+     {k, Length[p]}, {key, {"W", "b"}}], 1];
+  Max[Abs[pairs[[All, 1]] - pairs[[All, 2]]]]];`;
+
+  function summaryText(s) {
+    const inp = s.input.type === 'hashed' ? `${s.input.features.map(k => FEATURE_LABEL[k].toLowerCase()).join(', ')} hashed into ${s.input.dim.toLocaleString('en-GB')} slots` : `a vector of ${s.input.dim.toLocaleString('en-GB')} slots`;
+    const ls = s.graph.map(g => g.kind === 'dense' ? `${g.units} ${g.act} units` : g.kind === 'dropout' ? `dropout ${g.rate}` : g.kind === 'concat' ? 'a join' : `softmax over ${g.classes.join(', ')}`);
+    return `${inp}; ${ls.join(' → ')}; ${s.params.toLocaleString('en-GB')} weights`;
+  }
+
+  /* A Wolfram notebook (.nb) as text: every non-ASCII character written as \:xxxx */
+  const nbStr = s => '"' + [...s].map(ch => ch === '\\' ? '\\\\' : ch === '"' ? '\\"' : ch === '\n' ? '\\n'
+    : ch.codePointAt(0) < 128 ? ch : ch.codePointAt(0) < 0x10000 ? '\\:' + ch.codePointAt(0).toString(16).padStart(4, '0')
+    : '\\|' + ch.codePointAt(0).toString(16).padStart(6, '0')).join('') + '"';
+  const notebook = C => '(* Content-type: application/vnd.wolfram.mathematica *)\n\nNotebook[{\n' + C.map(([st, t]) => `Cell[${nbStr(t)}, "${st}"]`).join(',\n\n') + '\n}]\n';
+  const plain = C => C.map(([st, t]) => st === 'Code' ? t : st === 'Section' ? `(* ---------- ${t} ---------- *)` : `(* ${t} *)`).join('\n\n');
+
+  /* ================= Sequence nets: tokens, embeddings, encoders, decoders (as in tensor-algebra-nets) ================= */
+  const SEQ_KINDS = ['tokens', 'numbers', 'embed', 'project', 'add', 'encoder', 'decoder', 'seqsoftmax', 'pick', 'pool', 'possoftmax', 'regression'];
+  const SMALL_ONLY = ['feature', 'hash', 'slots', 'concat', 'dropout'];
+  const OUT_KINDS = ['softmax', 'seqsoftmax', 'possoftmax', 'regression'];
+  const isSeq = D => D.nodes.some(n => SEQ_KINDS.includes(n.kind));
+  const seqActs = ['ReLU', 'GELU', 'Tanh', 'Sigmoid', 'None'];
+  const outName = n => String(n.name || ({softmax:'Class', seqsoftmax:'Probabilities', possoftmax:'Node', regression:'Estimate'})[n.kind] || 'Out').replace(/[^\w]/g, '') || 'Out';
+
+  function compileSeq(D) {
+    const errors = [], warnings = [];
+    const byId = Object.fromEntries(D.nodes.map(n => [n.id, n]));
+    const inWires = id => D.wires.filter(w => w.to.node === id).sort((a, b) => a.to.port - b.to.port);
+    const outputs = D.nodes.filter(n => OUT_KINDS.includes(n.kind));
+    if (!outputs.length) { errors.push('Add an output: Softmax per token, Softmax (classes), Softmax over positions or Regression.'); return {errors, warnings}; }
+    if (D.nodes.some(n => SMALL_ONLY.includes(n.kind)))
+      errors.push('Feature, Hash, Slots, Join and Dropout belong to the small nets. A net with Tokens is built from the sequence elements.');
+    const need = new Set(), stack = outputs.map(n => n.id);
+    while (stack.length) { const id = stack.pop(); if (need.has(id)) continue; need.add(id); inWires(id).forEach(w => stack.push(w.from.node)); }
+    D.nodes.filter(n => !need.has(n.id)).forEach(n => warnings.push(`${describe(n)} is not connected to an output and is left out.`));
+    const used = D.nodes.filter(n => need.has(n.id));
+    for (const n of used) {
+      const k = ins(n), ws = inWires(n.id);
+      for (let i = 0; i < k; i++) if (!ws.some(w => w.to.port === i))
+        errors.push(`${describe(n)}: ${n.kind === 'decoder' ? (i ? 'the memory (the encoder)' : 'the target input') : k > 1 ? 'input ' + (i + 1) : 'its input'} is not connected.`);
+    }
+    if (errors.length) return {errors, warnings};
+    const order = [], seen = new Set(), visiting = new Set();
+    const visit = id => { if (seen.has(id)) return true; if (visiting.has(id)) return false; visiting.add(id);
+      for (const w of inWires(id)) if (!visit(w.from.node)) return false; visiting.delete(id); seen.add(id); order.push(id); return true; };
+    for (const o of outputs) if (!visit(o.id)) { errors.push('The wires go round in a loop.'); return {errors, warnings}; }
+    // teacher forcing: the tokens that reach a decoder's target input are its target sequence
+    const sourcesOf = id => inWires(id).map(w => w.from.node);
+    const tokensBehind = (id, first) => { const out = new Set(), st = [id]; let firstOnly = first;
+      while (st.length) { const x = st.pop(), n = byId[x];
+        if (n.kind === 'tokens') { out.add(x); continue; }
+        if (n.kind === 'decoder' || n.kind === 'encoder') { if (n.kind === 'decoder' && !firstOnly) { const s0 = inWires(x).find(w => w.to.port === 0); if (s0) st.push(s0.from.node); } continue; }
+        firstOnly = false;
+        sourcesOf(x).forEach(s => st.push(s)); }
+      return [...out]; };
+    const targetTokens = new Set(), decTarget = {};
+    for (const n of used.filter(n => n.kind === 'decoder')) {
+      const w0 = inWires(n.id).find(w => w.to.port === 0);
+      const t = tokensBehind(w0.from.node, false);
+      if (t.length !== 1) errors.push('A Decoder’s target input must come from one Tokens element (through its Embedding).');
+      else { targetTokens.add(t[0]); decTarget[n.id] = t[0]; }
+    }
+    const decoderBehind = id => { const st = [id], seenD = new Set();
+      while (st.length) { const x = st.pop(); if (seenD.has(x)) continue; seenD.add(x); const n = byId[x];
+        if (n.kind === 'decoder') return x; if (n.kind === 'tokens' || n.kind === 'encoder') continue; sourcesOf(x).forEach(s => st.push(s)); }
+      return null; };
+    // shapes, and the numbers in the net: learnt weights, and fixed numbers Wolfram also counts
+    const shape = {}, shared = {}, info = {};
+    let learnt = 0, fixed = 0;
+    const err = m => errors.push(m);
+    for (const id of order) {
+      const n = byId[id], ss = inWires(id).map(w => shape[w.from.node]);
+      const s0 = ss[0];
+      const want = (t, what) => { if (!ss.length || ss.some(s => !s || s.t !== t)) { err(`${describe(n)} takes ${what}.`); return false; } return true; };
+      let w = 0, f = 0;
+      switch (n.kind) {
+        case 'tokens': if (!(+n.vocab >= 1)) err('Tokens need a vocabulary size of 1 or more.'); shape[id] = {t:'tok', V:+n.vocab}; break;
+        case 'numbers': if (!(+n.size >= 1)) err('Numbers per token: the size must be 1 or more.'); shape[id] = {t:'seq', d:+n.size}; break;
+        case 'embed': {
+          if (!want('tok', 'Tokens')) break;
+          const V = s0.V, d = +n.d;
+          if (!(d >= 1)) { err('An Embedding needs a width d of 1 or more.'); break; }
+          if (n.shared) {
+            if (!shared[n.shared]) { shared[n.shared] = {V, d}; w += V * d; }
+            else if (shared[n.shared].V !== V || shared[n.shared].d !== d) err(`Embeddings sharing the weights “${n.shared}” need the same vocabulary and d.`);
+          } else w += V * d;
+          if (n.pos === 'learnt') w += (+n.maxLen) * d;
+          else if (n.pos === 'sinusoidal') { f += 2 * d; if (d % 2) err('Sinusoidal positions need an even d.'); }
+          shape[id] = {t:'seq', d}; break; }
+        case 'project': if (!want('seq', 'a sequence')) break; w += s0.d * n.units + +n.units; shape[id] = {t:'seq', d:+n.units}; break;
+        case 'add': if (!want('seq', 'sequences')) break;
+          if (ss.some(s => s.d !== s0.d)) { err('The sequences added must have the same width.'); break; }
+          shape[id] = {t:'seq', d:s0.d}; break;
+        case 'encoder': case 'decoder': {
+          if (!want('seq', n.kind === 'decoder' ? 'two sequences (the target, and the encoder’s output)' : 'a sequence')) break;
+          const d = s0.d, L = +n.layers, h = +n.heads, dff = +n.dff;
+          if (n.kind === 'decoder' && ss[1].d !== d) { err('A Decoder’s target and memory must have the same width.'); break; }
+          if (!(h >= 1) || d % h) err(`${describe(n)}: the width ${d} must divide into ${h} heads.`);
+          const mha = 4 * (d * d + d), ffn = d * dff + dff + dff * d + d, ln = 2 * d;
+          w += L * (n.kind === 'encoder' ? mha + ffn + 2 * ln : 2 * mha + ffn + 3 * ln);
+          shape[id] = {t:'seq', d}; break; }
+        case 'pick': if (!want('seq', 'a sequence')) break; shape[id] = {t:'vec', d:s0.d}; break;
+        case 'pool': if (!want('seq', 'a sequence')) break; shape[id] = {t:'vec', d:s0.d}; break;
+        case 'dense': if (!want('vec', 'a vector (after Pick or Pool)')) break; w += s0.d * n.units + +n.units; shape[id] = {t:'vec', d:+n.units}; break;
+        case 'softmax': { if (!want('vec', 'a vector (after Pick or Pool)')) break; const k = classesOf(n).length;
+          if (k < 2) err('Softmax needs at least two classes.'); w += s0.d * k + k; break; }
+        case 'possoftmax': if (!want('seq', 'a sequence')) break; w += s0.d + 1; break;
+        case 'regression': if (!want('vec', 'a vector (after Pick or Pool)')) break; w += s0.d * n.outputs + +n.outputs; break;
+        case 'seqsoftmax': {
+          if (!want('seq', 'a sequence')) break;
+          const V = +n.vocab, d = s0.d;
+          if (n.tie) {
+            const sh = shared[n.tie];
+            if (!sh) err(`No Embedding shares the weights “${n.tie}” for the Softmax per token to use.`);
+            else if (sh.V !== V || sh.d !== d) err(`The Softmax per token ties to “${n.tie}”, so its vocabulary must be ${sh.V} and its input width ${sh.d}.`);
+            w += V;
+          } else w += d * V + V;
+          if (+n.smoothing > 0) f += V * V;
+          const dec = decoderBehind(id);
+          info[id] = {decoder:dec, target:dec ? decTarget[dec] : null};
+          if (dec && decTarget[dec] && byId[decTarget[dec]].vocab != V) warnings.push(`The Softmax per token has ${V} classes but its target Tokens have ${byId[decTarget[dec]].vocab}.`);
+          break; }
+        default: err(`${describe(n)} cannot be used in a net with Tokens.`);
+      }
+      info[id] = Object.assign(info[id] || {}, {weights:w, fixed:f});
+      learnt += w; fixed += f;
+    }
+    const names = outputs.filter(n => need.has(n.id)).map(outName);
+    if (new Set(names).size !== names.length) errors.push('Give each output its own name.');
+    const portNames = used.filter(n => ['tokens', 'numbers'].includes(n.kind)).map(n => String(n.name || '').replace(/[^\w]/g, ''));
+    if (portNames.some(p => !p)) errors.push('Every Tokens and Numbers element needs a name: it becomes a port of the net.');
+    if (new Set(portNames).size !== portNames.length) errors.push('Give each input its own name.');
+    const nodes = order.map(id => ({...byId[id], shape:shape[id], info:info[id], from:inWires(id).map(w => w.from.node), target:targetTokens.has(id)}));
+    return {errors, warnings, spec:{seq:true, nodes, outputs:nodes.filter(n => OUT_KINDS.includes(n.kind)), learnt, fixed, params:learnt, total:learnt + fixed, chain:false}};
+  }
+
+  function seqSummaryText(s) {
+    const part = n => ({tokens:`${n.name} (${n.vocab} tokens)`, numbers:`${n.name} (${n.size} per token)`, embed:`embedding ${n.d}`, project:`per-token layer ${n.units}`, add:'add',
+      encoder:`encoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`, decoder:`decoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`,
+      pick:`position ${n.position}`, pool:`${n.op || 'Mean'} pool`, dense:`${n.units} ${n.act}`, softmax:`softmax over ${classesOf(n).length} classes (${outName(n)})`,
+      seqsoftmax:`softmax per token over ${n.vocab} (${outName(n)})`, possoftmax:`softmax over positions (${outName(n)})`, regression:`regression, ${n.outputs} outputs (${outName(n)})`})[n.kind] || n.kind;
+    return s.nodes.map(part).join('; ') + `; ${s.learnt.toLocaleString('en-GB')} weights learnt` + (s.fixed ? ` and ${s.fixed.toLocaleString('en-GB')} fixed numbers` : '');
+  }
+
+  const SEQ_PARTS = `(* The parts, as in tensor-algebra-nets (ff_tensornets_new.nb and Unit 4) *)
+ccnAct = <|"ReLU" -> Ramp, "GELU" -> ElementwiseLayer["GELU"], "Tanh" -> Tanh, "Sigmoid" -> LogisticSigmoid|>;
+ccnLinear[u_, act_] := If[act === "None", LinearLayer[u], NetChain[{LinearLayer[u], ccnAct[act]}]];
+
+(* Multi-head attention: projections of the query and the memory, scaled dot products, the heads joined and projected *)
+ccnMHA[d_, h_, mask_] := NetGraph[<|
+    "q" -> NetMapOperator[NetChain[{LinearLayer[d], ReshapeLayer[{h, d/h}]}]],
+    "k" -> NetMapOperator[NetChain[{LinearLayer[d], ReshapeLayer[{h, d/h}]}]],
+    "v" -> NetMapOperator[NetChain[{LinearLayer[d], ReshapeLayer[{h, d/h}]}]],
+    "att" -> AttentionLayer["Dot", "ScoreRescaling" -> "DimensionSqrt", "Mask" -> mask, "MultiHead" -> True],
+    "o" -> NetMapOperator[NetChain[{FlattenLayer[], LinearLayer[d]}]]|>,
+   {NetPort["Query"] -> "q" -> NetPort["att", "Query"], NetPort["Memory"] -> "k" -> NetPort["att", "Key"],
+    NetPort["Memory"] -> "v" -> NetPort["att", "Value"], "att" -> "o"},
+   "Query" -> {"Varying", d}, "Memory" -> {"Varying", d}];
+ccnFF[d_, dff_, act_] := NetMapOperator[NetChain[{LinearLayer[dff], ccnAct[act], LinearLayer[d]}]];
+ccnLN[] := NormalizationLayer[2, 2];        (* layer normalisation: per position, over the features *)
+
+ccnEncBlock[d_, h_, dff_, act_] := NetGraph[<|"att" -> ccnMHA[d, h, None], "a1" -> TotalLayer[], "n1" -> ccnLN[],
+    "ff" -> ccnFF[d, dff, act], "a2" -> TotalLayer[], "n2" -> ccnLN[]|>,
+   {NetPort["Input"] -> NetPort["att", "Query"], NetPort["Input"] -> NetPort["att", "Memory"],
+    {NetPort["Input"], "att"} -> "a1", "a1" -> "n1", "n1" -> "ff", {"n1", "ff"} -> "a2", "a2" -> "n2"},
+   "Input" -> {"Varying", d}];
+ccnDecBlock[d_, h_, dff_, act_] := NetGraph[<|"self" -> ccnMHA[d, h, "Causal"], "a1" -> TotalLayer[], "n1" -> ccnLN[],
+    "cross" -> ccnMHA[d, h, None], "a2" -> TotalLayer[], "n2" -> ccnLN[], "ff" -> ccnFF[d, dff, act], "a3" -> TotalLayer[], "n3" -> ccnLN[]|>,
+   {NetPort["Input"] -> NetPort["self", "Query"], NetPort["Input"] -> NetPort["self", "Memory"], {NetPort["Input"], "self"} -> "a1", "a1" -> "n1",
+    "n1" -> NetPort["cross", "Query"], NetPort["Memory"] -> NetPort["cross", "Memory"], {"n1", "cross"} -> "a2", "a2" -> "n2",
+    "n2" -> "ff", {"n2", "ff"} -> "a3", "a3" -> "n3"},
+   "Input" -> {"Varying", d}, "Memory" -> {"Varying", d}];
+ccnEncoder[d_, h_, dff_, act_, nL_] := NetChain[Table[ccnEncBlock[d, h, dff, act], nL]];
+ccnDecoder[d_, h_, dff_, act_, nL_] := NetGraph[Association@Table["b" <> ToString[i] -> ccnDecBlock[d, h, dff, act], {i, nL}],
+   Join[{NetPort["Input"] -> NetPort["b1", "Input"]}, Table[NetPort["Memory"] -> NetPort["b" <> ToString[i], "Memory"], {i, nL}],
+    Table["b" <> ToString[i - 1] -> NetPort["b" <> ToString[i], "Input"], {i, 2, L}]]];
+
+(* Fixed sinusoidal positions (Unit 4): sin(position \\[Times] frequency + phase), added to the embedding *)
+ccnSinusoid[d_] := NetGraph[<|"idx" -> SequenceIndicesLayer[], "pos" -> ElementwiseLayer[# - 1. &], "col" -> ReplicateLayer[1, 2],
+    "angle" -> NetMapOperator[LinearLayer[d, "Weights" -> List /@ Flatten@Table[{1., 1.}/10000.^(2 i/d), {i, 0, d/2 - 1}],
+       "Biases" -> Table[If[EvenQ[j], 0., N[Pi/2]], {j, 0, d - 1}], LearningRateMultipliers -> 0]],
+    "sin" -> ElementwiseLayer[Sin], "add" -> TotalLayer[]|>,
+   {NetPort["Input"] -> "idx" -> "pos" -> "col" -> "angle" -> "sin", {NetPort["Input"], "sin"} -> "add"}, "Input" -> {"Varying", d}];
+
+(* Token embedding, optionally sharing its weights, scaled by Sqrt[d], with learnt, sinusoidal or no positions *)
+ccnEmbed[d_, v_, pos_, maxLen_, scale_, shared_] := Module[{layers, conns, last = "tok"},
+   layers = <|"tok" -> If[shared === None, EmbeddingLayer[d, v], EmbeddingLayer[d, v, "Weights" -> NetSharedArray[shared]]]|>;
+   conns = {NetPort["Input"] -> "tok"};
+   If[TrueQ[scale], layers["scale"] = ElementwiseLayer[Evaluate[Sqrt[N@d]] # &]; AppendTo[conns, last -> "scale"]; last = "scale"];
+   Switch[pos,
+    "learnt", layers = Join[layers, <|"idx" -> SequenceIndicesLayer[maxLen], "pos" -> EmbeddingLayer[d, maxLen], "add" -> TotalLayer[]|>];
+     conns = Join[conns, {last -> "add", NetPort["Input"] -> "idx" -> "pos" -> "add"}],
+    "sinusoidal", layers["pe"] = ccnSinusoid[d]; AppendTo[conns, last -> "pe"],
+    _, Null];
+   NetGraph[layers, conns, "Input" -> {"Varying", Restricted["Integer", v]}]];`;
+
+  function seqCells(D, spec, set) {
+    const C = [], add = (style, text) => C.push([style, text]);
+    const s = spec, date = (set.date || new Date().toISOString()).slice(0, 16).replace('T', ' ');
+    const nm = {}; s.nodes.forEach((n, i) => { nm[n.id] = n.kind + (i + 1); });
+    const L = [], conns = [], ports = [], targets = [], losses = [];
+    const multi = s.outputs.length > 1;
+    const lossPort = n => multi ? 'Loss' + outName(n) : 'Loss';
+    const src = (id, forEmbed) => { const n = s.nodes.find(x => x.id === id);
+      if (n.kind === 'tokens' || n.kind === 'numbers') return n.target && forEmbed ? wlStr('most_' + nm[id]) : `NetPort[${wlStr(n.name)}]`;
+      return wlStr(nm[id]); };
+    for (const n of s.nodes) {
+      const k = wlStr(nm[n.id]), sh = n.shape || {};
+      switch (n.kind) {
+        case 'tokens':
+          ports.push(`${wlStr(n.name)} -> {"Varying", Restricted["Integer", ${wlInt(n.vocab)}]}`);
+          if (n.target) { L.push(`${wlStr('most_' + nm[n.id])} -> SequenceMostLayer[]`, `${wlStr('rest_' + nm[n.id])} -> SequenceRestLayer[]`);
+            conns.push(`NetPort[${wlStr(n.name)}] -> ${wlStr('most_' + nm[n.id])}`, `NetPort[${wlStr(n.name)}] -> ${wlStr('rest_' + nm[n.id])}`); }
+          break;
+        case 'numbers': ports.push(`${wlStr(n.name)} -> {"Varying", ${wlInt(n.size)}}`); break;
+        case 'embed': {
+          const tok = s.nodes.find(x => x.id === n.from[0]);
+          L.push(`${k} -> ccnEmbed[${wlInt(n.d)}, ${wlInt(tok.vocab)}, ${wlStr(n.pos)}, ${wlInt(n.maxLen)}, ${n.scale ? 'True' : 'False'}, ${n.shared ? wlStr(n.shared) : 'None'}]`);
+          conns.push(`${src(n.from[0], true)} -> ${k}`); break; }
+        case 'project': L.push(`${k} -> NetMapOperator[ccnLinear[${wlInt(n.units)}, ${wlStr(n.act)}]]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'add': L.push(`${k} -> TotalLayer[]`); conns.push(`{${n.from.map(f => src(f)).join(', ')}} -> ${k}`); break;
+        case 'encoder': L.push(`${k} -> ccnEncoder[${sh.d}, ${wlInt(n.heads)}, ${wlInt(n.dff)}, ${wlStr(n.act)}, ${wlInt(n.layers)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'decoder': L.push(`${k} -> ccnDecoder[${sh.d}, ${wlInt(n.heads)}, ${wlInt(n.dff)}, ${wlStr(n.act)}, ${wlInt(n.layers)}]`);
+          conns.push(`${src(n.from[0])} -> NetPort[${k}, "Input"]`, `${src(n.from[1])} -> NetPort[${k}, "Memory"]`); break;
+        case 'pick': L.push(`${k} -> PartLayer[${wlInt(n.position)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'pool': L.push(`${k} -> AggregationLayer[${({Mean:'Mean', Max:'Max', Sum:'Total'})[n.op] || 'Mean'}, 1]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'dense': L.push(`${k} -> ccnLinear[${wlInt(n.units)}, ${wlStr(n.act)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'softmax': case 'possoftmax': {
+          const o = outName(n), kk = n.kind === 'softmax' ? classesOf(n).length : 0, p = wlStr(nm[n.id] + 'P'), l = wlStr('loss_' + nm[n.id]);
+          L.push(n.kind === 'softmax' ? `${k} -> LinearLayer[${kk}]` : `${k} -> NetMapOperator[LinearLayer[{}]]`, `${p} -> SoftmaxLayer[]`, `${l} -> CrossEntropyLossLayer["Index"]`);
+          conns.push(`${src(n.from[0])} -> ${k} -> ${p}`, `${p} -> NetPort[${wlStr(o + 'Prob')}]`, `${p} -> NetPort[${l}, "Input"]`,
+            `NetPort[${wlStr(o)}] -> NetPort[${l}, "Target"]`, `${l} -> NetPort[${wlStr(lossPort(n))}]`);
+          targets.push(n.kind === 'softmax' ? `${o}: the class of each example, 1 to ${kk} (${classesOf(n).join(', ')})` : `${o}: the position chosen in each example, from 1`);
+          losses.push(lossPort(n)); break; }
+        case 'regression': {
+          const o = outName(n), t = String(n.target || 'Target').replace(/[^\w]/g, '') || 'Target', l = wlStr('loss_' + nm[n.id]);
+          L.push(`${k} -> LinearLayer[${wlInt(n.outputs)}]`, `${l} -> MeanSquaredLossLayer[]`);
+          conns.push(`${src(n.from[0])} -> ${k}`, `${k} -> NetPort[${wlStr(o)}]`, `${k} -> NetPort[${l}, "Input"]`, `NetPort[${wlStr(t)}] -> NetPort[${l}, "Target"]`, `${l} -> NetPort[${wlStr(lossPort(n))}]`);
+          targets.push(`${t}: ${n.outputs} numbers per example`); losses.push(lossPort(n)); break; }
+        case 'seqsoftmax': {
+          const o = outName(n), V = +n.vocab, p = wlStr(nm[n.id] + 'P'), l = wlStr('loss_' + nm[n.id]), eps = +n.smoothing;
+          L.push(`${k} -> NetMapOperator[LinearLayer[${V}${n.tie ? `, "Weights" -> NetSharedArray[${wlStr(n.tie)}]` : ''}]]`, `${p} -> SoftmaxLayer[]`);
+          conns.push(`${src(n.from[0])} -> ${k} -> ${p}`, `${p} -> NetPort[${wlStr(o)}]`, `${p} -> NetPort[${l}, "Input"]`, `${l} -> NetPort[${wlStr(lossPort(n))}]`);
+          const tgt = n.info && n.info.target ? s.nodes.find(x => x.id === n.info.target) : null;
+          const tsrc = tgt ? wlStr('rest_' + nm[tgt.id]) : `NetPort[${wlStr(o + 'Target')}]`;
+          if (eps > 0) {
+            const sm = wlStr('smooth_' + nm[n.id]);
+            L.push(`${sm} -> EmbeddingLayer[${V}, ${V}, "Weights" -> ${wlNum(1 - eps)} IdentityMatrix[${V}] + ${wlNum(eps)}/${V}, LearningRateMultipliers -> 0]`, `${l} -> CrossEntropyLossLayer["Probabilities"]`);
+            conns.push(`${tsrc} -> ${sm} -> NetPort[${l}, "Target"]`);
+          } else { L.push(`${l} -> CrossEntropyLossLayer["Index"]`); conns.push(`${tsrc} -> NetPort[${l}, "Target"]`); }
+          if (!tgt) { ports.push(`${wlStr(o + 'Target')} -> {"Varying", Restricted["Integer", ${V}]}`); targets.push(`${o}Target: the right token at every position, 1 to ${V}`); }
+          else targets.push(`${tgt.name}: the target tokens with a start token first and an end token last; the decoder reads all but the last, and is scored on all but the first (teacher forcing)`);
+          losses.push(lossPort(n)); break; }
+      }
+    }
+    const inputs = s.nodes.filter(n => n.kind === 'tokens' || n.kind === 'numbers').map(n => n.kind === 'tokens' ? `${n.name}: lists of token indices, 1 to ${n.vocab}` : `${n.name}: lists of ${n.size} numbers per token`);
+    add('Title', `${set.name}: a net generated from a diagram`);
+    add('Text', `Generated by the CCN Net Diagram Editor (editor/net-diagram-editor.html) on ${date} UTC.\nThe net: ${seqSummaryText(s)}.\n` +
+      'It is built from the parts of tensor-algebra-nets (attention, feed-forward, layer normalisation, embeddings) with Wolfram’s layers.');
+    add('Text', 'By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)\nAI System Programming Group');
+    add('Section', 'The diagram');
+    add('Code', `(* The diagram as the editor saved it; open it again in the editor with Open *)\ndiagramJSON = ${wlStr(JSON.stringify({diagram:D, settings:set}))};`);
+    add('Section', 'The parts');
+    add('Code', SEQ_PARTS);
+    add('Section', 'The net');
+    add('Code', `net = NetGraph[<|\n   ${L.join(',\n   ')}|>,\n  {${conns.join(',\n   ')}},\n  ${ports.join(',\n  ')}];\nnet`);
+    add('Code', `(* The numbers in the net: Wolfram counts the learnt weights and the fixed numbers (sinusoidal positions, label smoothing) *)\n` +
+      `netCount = Information[NetInitialize[net], "ArraysTotalElementCount"];\n` +
+      `Grid[{{"Numbers in the net, Wolfram's count", netCount}, {"Expected from the diagram", ${s.total}},\n   {"of which learnt weights", ${s.learnt}}, {"of which fixed numbers", ${s.fixed}},\n   {"Same?", netCount === ${s.total}}}, Frame -> All, Alignment -> Left]`);
+    add('Section', 'Training on your own data');
+    add('Text', 'The net is trained on examples you provide. trainData is an Association with one list per port, the lists in step:\n' +
+      inputs.concat(targets).map(t => '  ' + t).join('\n') +
+      '\nFor the TensorNets nets, the full recipes (data from the exact oracle, warm-up, beam search for decoding) are in the notebooks of tensor-algebra-nets.');
+    add('Code', `If[ValueQ[trainData],\n  {trainTime, trained} = AbsoluteTiming[NetTrain[net, trainData, LossFunction -> ${losses.length > 1 ? '{' + losses.map(wlStr).join(', ') + '}' : wlStr(losses[0])},\n` +
+      `     MaxTrainingRounds -> ${wlInt(set.epochs)}, BatchSize -> ${wlInt(set.batch)}, Method -> {"ADAM", "LearningRate" -> ${wlNum(set.lr)}, "L2Regularization" -> ${wlNum(set.l2)}},\n` +
+      `     RandomSeeding -> ${wlInt(set.seed)}, TargetDevice -> "CPU", TrainingProgressReporting -> None]],\n  "Define trainData first, as described above."]`);
+    add('Text', '© Computational Classnotes · CC BY-NC-SA 4.0');
+    return C;
+  }
+
+
+  /* ---------- Examples: SubjectNet, and the nets of tensor-algebra-nets ---------- */
+  const TN_RULES = 'ZeroSum, ZeroProd, UnitProd, PowerExpand, DistLeft, DistRight, AssocSum, AssocProd, FactorLeft, FactorRight, PowerFold';
+  function example(key) {
+    const nodes = [], wires = [];
+    const N = (id, o) => nodes.push({id, ...o});
+    const W = (a, b, port = 0) => wires.push({id:'w' + wires.length, from:{node:a, port:0}, to:{node:b, port}});
+    const tnEnc = {layers:3, heads:4, dff:512, act:'GELU'};
+    const tnEmb = {d:128, pos:'learnt', maxLen:96, scale:false, shared:''};
+    if (key === 'subjectnet') {
+      FEATURE_KEYS.forEach((k, i) => N('f' + i, {kind:'feature', key:k, x:100, y:60 + i * 44}));
+      N('h', {kind:'hash', nIn:5, slots:2048, x:240, y:148}); N('s', {kind:'slots', size:2048, x:330, y:148});
+      N('d', {kind:'dense', units:32, act:'ReLU', x:470, y:148}); N('o', {kind:'softmax', classes:'object, other', x:610, y:148});
+      FEATURE_KEYS.forEach((k, i) => W('f' + i, 'h', i)); W('h', 's'); W('s', 'd'); W('d', 'o');
+    } else if (key === 'ownet') {
+      N('tS', {kind:'tokens', name:'Input', vocab:10, sample:'( a ⨁ b )', x:90, y:320}); N('tT', {kind:'tokens', name:'Target', vocab:10, sample:'s ⨁ ⨂ a c', x:90, y:100});
+      const e = {kind:'embed', d:32, pos:'sinusoidal', maxLen:96, scale:true, shared:'W'};
+      N('eS', {...e, x:250, y:320}); N('eT', {...e, x:250, y:100});
+      N('en', {kind:'encoder', layers:2, heads:4, dff:128, act:'ReLU', x:420, y:320});
+      N('de', {kind:'decoder', layers:2, heads:4, dff:128, act:'ReLU', x:620, y:200});
+      N('so', {kind:'seqsoftmax', name:'Probabilities', vocab:10, tie:'W', smoothing:0.1, x:820, y:290});
+      W('tS', 'eS'); W('tT', 'eT'); W('eS', 'en'); W('eT', 'de', 0); W('en', 'de', 1); W('de', 'so');
+    } else if (key === 'tnparser') {
+      N('tS', {kind:'tokens', name:'Input', vocab:32, sample:'( x1 ⨁ x2 )', x:90, y:320}); N('tT', {kind:'tokens', name:'Target', vocab:22, sample:'s P S x1 x2', x:90, y:100});
+      N('eS', {kind:'embed', ...tnEmb, x:240, y:320}); N('eT', {kind:'embed', ...tnEmb, x:240, y:100});
+      N('en', {kind:'encoder', ...tnEnc, x:400, y:320}); N('de', {kind:'decoder', ...tnEnc, x:600, y:200});
+      N('so', {kind:'seqsoftmax', name:'Probabilities', vocab:22, tie:'', smoothing:0, x:800, y:290});
+      W('tS', 'eS'); W('tT', 'eT'); W('eS', 'en'); W('eT', 'de', 0); W('en', 'de', 1); W('de', 'so');
+    } else if (key === 'tnpolicy') {
+      N('t', {kind:'tokens', name:'Input', vocab:22, sample:'E P S x1 x2', x:90, y:200}); N('e', {kind:'embed', ...tnEmb, x:260, y:200});
+      N('en', {kind:'encoder', ...tnEnc, x:440, y:200}); N('pk', {kind:'pick', position:1, x:600, y:110});
+      N('ru', {kind:'softmax', name:'Rule', classes:TN_RULES, x:740, y:110}); N('no', {kind:'possoftmax', name:'Node', x:640, y:330});
+      W('t', 'e'); W('e', 'en'); W('en', 'pk'); W('pk', 'ru'); W('en', 'no');
+    } else if (key === 'tnvalue') {
+      N('t', {kind:'tokens', name:'Input', vocab:20, sample:'P S x1 x2 x3', x:90, y:110}); N('nu', {kind:'numbers', name:'Dims', size:1, x:90, y:290});
+      N('e', {kind:'embed', ...tnEmb, x:260, y:110}); N('pr', {kind:'project', units:128, act:'None', x:260, y:290});
+      N('ad', {kind:'add', nIn:2, x:380, y:200}); N('en', {kind:'encoder', ...tnEnc, x:500, y:200});
+      N('po', {kind:'pool', op:'Mean', x:650, y:200}); N('de', {kind:'dense', units:128, act:'GELU', x:760, y:200});
+      N('re', {kind:'regression', name:'Estimate', target:'Target', outputs:3, x:880, y:200});
+      W('t', 'e'); W('nu', 'pr'); W('e', 'ad', 0); W('pr', 'ad', 1); W('ad', 'en'); W('en', 'po'); W('po', 'de'); W('de', 're');
+    }
+    return {nodes, wires};
+  }
+  const EXAMPLES = [['subjectnet', 'SubjectNet (nets/SubjectNet.nb)'], ['ownet', 'owNet: Unit 4 of tensor-algebra-nets'],
+    ['tnparser', 'tnParserNet: TensorNets parser'], ['tnpolicy', 'tnPolicyNet: TensorNets policy'], ['tnvalue', 'tnValueNet: TensorNets value']];
+  /* ---------- Python: a script that uses our own code in python/ccn_nets (no neural-net library) ---------- */
+  const FEATURE_PY = {
+    Own:'(["own:none"] if not own else ["o:" + w for w in own] + ["oL:" + own[-1]])',
+    Prev:'(([\"prev:none\"] if not prev else [\"p:\" + w for w in prev[-min(4, len(prev)):]]) if not own else [])',
+    Join:'["j:" + r["Join"]]',
+    Verb:'["v:" + r["Verb"]]',
+    After:'["a:" + w for w in after[:4]]\n            + (["a2:" + after[0] + "_" + after[1]] if len(after) >= 2 else [])',
+  };
+  const pyStr = s => JSON.stringify(String(s));
+  const pyNum = x => { const s = String(+x); return /[.e]/.test(s) ? s : s + '.0'; };
+  const pyName = s => (String(s).replace(/[^\w]+/g, '_').replace(/^(\d)/, '_$1') || 'net_from_diagram');
+
+  /* What stops a Python script: our own Python code handles chains only, in this issue */
+  function pythonProblems(spec) {
+    if (spec.seq) return ['Python (our own code) has no attention yet, so nets with Tokens (transformers) are written for Wolfram only at this stage. Choose Wolfram.'];
+    const out = spec.chain ? [] : ['Python (our own code) handles nets drawn as a chain only in this issue. Choose Wolfram for a net that branches.'];
+    if (spec.graph.some(g => g.act === 'GELU')) out.push('GELU is not in our Python code yet: choose ReLU, Tanh, Sigmoid or None, or choose Wolfram.');
+    return out;
+  }
+
+  function pyScript(D, spec, set) {
+    const s = spec, dim = s.input.dim, own = set.data === 'own', hashed = s.input.type === 'hashed';
+    const date = (set.date || new Date().toISOString()).slice(0, 16).replace('T', ' ');
+    const dense = s.graph.filter(g => g.kind === 'dense' || g.kind === 'softmax');
+    const sizes = [dim, ...dense.map(g => g.kind === 'dense' ? g.units : s.classes.length)];
+    const acts = dense.filter(g => g.kind === 'dense').map(g => g.act);
+    const dropped = s.graph.some(g => g.kind === 'dropout');
+    const isObjOther = s.classes.join() === 'object,other';
+    const L = [];
+    const add = (...lines) => L.push(...lines);
+    add('"""' + set.name + ': a net generated from a diagram by the CCN Net Diagram Editor (editor/net-diagram-editor.html)',
+      `on ${date} UTC.`, '',
+      'The net: ' + summaryText(s) + '.',
+      'Trained with our own code (python/ccn_nets/nn.py): forward pass, backpropagation and Adam written out,',
+      'softmax and cross-entropy our own; NumPy only for arrays. No neural-net library is used.' + (dropped ? '\nDropout is left out of this version (our own code has no dropout yet).' : ''),
+      own ? (hashed ? 'Data: your own. Write my_data.py beside this script with train_records and test_records:\n  lists of (record, class); a record is a dict with "Own", "Verb", "After", "Prev" and "Join",\n  as ccn_nets.motion.motion_subject gives.'
+        : `Data: your own. Write my_data.py beside this script with train_vectors and test_vectors:\n  lists of (vector of length ${dim}, class).`)
+        : "Data: SubjectNet's template data, made by ccn_nets.subjectnet (training and test words kept apart).",
+      '', 'Run:  python3 ' + pyName(set.name) + '.py',
+      '      Save this script in the repository\'s python/ folder, or set CCN_PYTHON below to that folder.', '',
+      'By Dara O Shayda and Hikari Noor Hoshino (\u661f\u91ce\u30cc\u30fc\u30eb)', 'AI System Programming Group', '',
+      '\u00a9 Computational Classnotes \u00b7 CC BY-NC-SA 4.0', '"""', '',
+      'import json', 'import os', 'import sys', 'import time', 'import zlib', '', 'import numpy as np', '',
+      'HERE = os.path.dirname(os.path.abspath(__file__))',
+      `CCN_PYTHON = os.path.normpath(os.path.join(HERE, ${pyStr(set.pyPath || '.')}))   # the repository's python/ folder`,
+      'sys.path.insert(0, CCN_PYTHON)', '',
+      'from ccn_nets.nn import Net, gradient_check, train   # noqa: E402', '',
+      '# The diagram as the editor saved it; open it again in the editor with Open',
+      'DIAGRAM = json.loads(' + JSON.stringify(JSON.stringify({diagram:D, settings:set})) + ')', '',
+      '# The net drawn: sizes from input to output, one activation per hidden layer; the last layer is softmax',
+      `SIZES = [${sizes.join(', ')}]`,
+      `ACTIVATIONS = [${acts.map(pyStr).join(', ')}]`,
+      `CLASSES = [${s.classes.map(pyStr).join(', ')}]`,
+      `DIM = ${dim}`,
+      `WEIGHTS_IN_DIAGRAM = ${s.params}`,
+      `EPOCHS, BATCH_SIZE, LEARNING_RATE, L2, SEED = ${Math.round(set.epochs)}, ${Math.round(set.batch)}, ${pyNum(set.lr)}, ${pyNum(set.l2)}, ${Math.round(set.seed)}`, '');
+    if (hashed) {
+      add(`# The features drawn in the diagram (${s.input.features.join(', ')}), hashed into ${dim} slots of 0s and 1s,`,
+        '# as in SubjectNet: zlib.crc32 gives the same slots as Hash[..., "CRC32"] in Wolfram',
+        'def diagram_features(r):',
+        '    own, prev, after = r["Own"], r["Prev"], r["After"]',
+        '    return (' + (s.input.features.map(k => FEATURE_PY[k]).join('\n            + ') || '[]') + ')', '', '',
+        'def diagram_vector(r):',
+        '    v = np.zeros(DIM)',
+        '    for f in diagram_features(r):',
+        '        v[zlib.crc32(f.encode("utf-8")) % DIM] = 1.0',
+        '    return v', '', '');
+    }
+    add('def load_data():', '    """Training and test inputs (rows) with their classes."""');
+    if (!own) {
+      add('    from ccn_nets import subjectnet',
+        '    train_data = subjectnet.make_data("train", 2000, 11)',
+        '    test_data = subjectnet.make_data("test", 600, 22)');
+      if (hashed) add('    x = lambda data: np.array([diagram_vector(r) for r, _ in data])');
+      else add(`    x = lambda data: np.array([subjectnet.feature_vector(r) for r, _ in data])   # SubjectNet's own 2,048 slots`);
+      add('    return x(train_data), [l for _, l in train_data], x(test_data), [l for _, l in test_data], train_data, test_data');
+    } else if (hashed) {
+      add('    sys.path.insert(0, HERE)',
+        '    from my_data import test_records, train_records',
+        '    x = lambda data: np.array([diagram_vector(r) for r, _ in data])',
+        '    return x(train_records), [l for _, l in train_records], x(test_records), [l for _, l in test_records], train_records, test_records');
+    } else {
+      add('    sys.path.insert(0, HERE)',
+        '    from my_data import test_vectors, train_vectors',
+        '    x = lambda data: np.array([np.asarray(v, dtype=float) for v, _ in data])',
+        '    return x(train_vectors), [l for _, l in train_vectors], x(test_vectors), [l for _, l in test_vectors], None, None');
+    }
+    add('', '', 'def main():',
+      '    x_train, labels_train, x_test, labels_test, train_data, test_data = load_data()');
+    if (!own && !hashed && dim !== 2048) add(`    print("SubjectNet's data has 2,048 slots, but the diagram's Slots element has ${dim}: draw a Hash, or set the Slots to 2048.")`);
+    add('    y_train = np.array([[1.0 if l == c else 0.0 for c in CLASSES] for l in labels_train])',
+      '    net = Net(SIZES, ACTIVATIONS).initialise(SEED)',
+      '    t0 = time.perf_counter()',
+      '    history = train(net, x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, l2=L2, seed=SEED)',
+      '    seconds = time.perf_counter() - t0',
+      '    classify = lambda x: CLASSES[int(net.classify(np.atleast_2d(x))[0])]',
+      '    accuracy = float(np.mean([classify(x) == l for x, l in zip(x_test, labels_test)]))',
+      '    rows = [',
+      '        ("Weights in the diagram", WEIGHTS_IN_DIAGRAM),',
+      '        ("Weights in the trained net", net.weight_count),',
+      '        ("Training time, s", round(seconds, 2)),',
+      '        ("Loss, first and last epoch", [round(history[0], 4), round(history[-1], 4)]),',
+      '        ("Accuracy on the test data", accuracy),',
+      '        ("Gradient check, largest difference", gradient_check(tuple(ACTIVATIONS), classes=len(CLASSES))),',
+      '    ]');
+    if (!own && hashed) {
+      add('    from ccn_nets import motion, subjectnet',
+        '    # Is the input the same as SubjectNet\'s? (True when all five features and 2,048 slots are drawn)',
+        '    rows.append(("Same input as SubjectNet", all(np.array_equal(diagram_vector(r), subjectnet.feature_vector(r)) for r, _ in train_data[:50])))');
+      if (isObjOther) add(
+        '    # The trained net as a subject check for the motion reader:',
+        '    #   motion.motion_find(text, subject_check=check)',
+        '    check = lambda r: classify(diagram_vector(r))',
+        '    paragraphs, paragraph_parts, hard_parts = subjectnet.test_data()',
+        '    rows.append(("Paragraph parts right", f"{sum(check(r) == l for r, l in paragraph_parts)} of {len(paragraph_parts)}"))',
+        '    rows.append(("Hard sentences right", f"{sum(check(r) == l for r, l in hard_parts)} of {len(hard_parts)}"))',
+        '    rows.append(("Paragraphs right step by step", f"{sum(s[1] for s in subjectnet.paragraph_scores(paragraphs, check))} of {len(paragraphs)}"))');
+    }
+    add('    for name, value in rows:',
+      '        print(f"{name}: {value}")',
+      `    net.save(os.path.join(HERE, ${pyStr(pyName(set.name) + '.npz')}))   # the trained weights; Net.load reads them back`,
+      '    return net', '', '',
+      'if __name__ == "__main__":',
+      '    main()', '');
+    return L.join('\n');
+  }
+
+  return {FEATURE_KEYS, FEATURE_LABEL, ACTS, ins, outs, classesOf, compile, cells, notebook, plain, summaryText, describe, pyScript, pyName, pythonProblems,
+    isSeq, SEQ_KINDS, seqActs, outName, seqSummaryText, example, EXAMPLES};
+})();
+if (typeof module !== 'undefined') module.exports = NetCore;
+</script>
+
+<script>
+/* ================= UI ================= */
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+let D = {nodes:[], wires:[]}, sel = null, view = {x:0, y:0, s:1}, idc = 1, lastCells = null;
+const newId = p => p + Date.now().toString(36) + (idc++);
+const undo = [];
+const snapshot = () => JSON.stringify(D);
+const pushUndo = s => { undo.push(s ?? snapshot()); if (undo.length > 120) undo.shift(); };
+const byId = id => D.nodes.find(n => n.id === id);
+const C = {purple:'#534AB7', purpleF:'#EEEDFE', teal:'#0F6E56', tealF:'#E1F5EE', coral:'#993C1D', coralF:'#FAECE7', amber:'#EF9F27', grey:'#73726c', greyF:'#ecebe6', ink:'#2c2c2a'};
+
+/* ---------- geometry: reads left to right, inputs on the left of an element, outputs on the right ---------- */
+const CELLS = 14, LIT = [1, 4, 6, 9, 12];
+function size(n) {
+  switch (n.kind) {
+    case 'feature': return {w:120, h:30};
+    case 'hash': return {w:60, h:Math.max(100, n.nIn * 24 + 20)};
+    case 'slots': return {w:16, h:CELLS * 12};
+    case 'dense': { const k = Math.min(+n.units || 1, 8); return {w:22, h:(k - 1) * 28 + 22 + (+n.units > 8 ? GAP : 0)}; }
+    case 'dropout': return {w:84, h:30};
+    case 'concat': return {w:14, h:Math.max(60, n.nIn * 26 + 12)};
+    case 'softmax': { const all = NetCore.classesOf(n).length, k = Math.min(Math.max(all, 1), 6); return {w:54, h:(k - 1) * (all > 6 ? 34 : 64) + 56}; }
+    default: if (typeof SEQ_SIZE !== 'undefined' && SEQ_SIZE[n.kind]) return SEQ_SIZE[n.kind](n);
+  }
+  return {w:40, h:40};
+}
+// the centres of the circles drawn for a layer: at most eight, split four and four around a gap when there are more units
+const GAP = 22;
+function unitYs(n) {
+  const k = Math.min(+n.units || 1, 8), {h} = size(n), top = n.y - h / 2 + 11, more = +n.units > 8;
+  return Array.from({length:k}, (_, i) => top + i * 28 + (more && i >= 4 ? GAP : 0));
+}
+function portPos(n, side, i) {
+  const {w, h} = size(n), k = side === 'in' ? NetCore.ins(n) : NetCore.outs(n);
+  if (side === 'out') return {x:n.x + w / 2, y:n.y};
+  return {x:n.x - w / 2, y:k <= 1 ? n.y : n.y - h / 2 + (i + 0.5) * h / k};
+}
+// the points the fan of connections leaves from or arrives at
+function glyphs(n, side) {
+  const {w, h} = size(n);
+  if (n.kind === 'slots') return LIT.map(i => ({x:n.x + (side === 'out' ? w / 2 : -w / 2), y:n.y - h / 2 + i * 12 + 6}));
+  if (n.kind === 'dense') return unitYs(n).map(y => ({x:n.x + (side === 'out' ? 9 : -9), y}));
+  if (n.kind === 'softmax') { const all = NetCore.classesOf(n).length, k = Math.min(all, 6), sp = all > 6 ? 34 : 64; return Array.from({length:k}, (_, i) => ({x:n.x - 12, y:n.y - h / 2 + 28 + i * sp})); }
+  return null;
+}
+function wirePath(p, q) { const c = Math.max(24, Math.abs(q.x - p.x) / 2); return `M${p.x},${p.y} C${p.x + c},${p.y} ${q.x - c},${q.y} ${q.x},${q.y}`; }
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+// a text-anchor given here must beat the class's own, so it is set as a style
+const text = (parent, x, y, s, cls = 'lbl', extra = {}) => { const t = el('text', {x, y, class:cls, ...extra, ...(extra['text-anchor'] ? {style:`text-anchor:${extra['text-anchor']}`} : {})}, parent); t.textContent = s; return t; };
+const fmt = x => (+x).toLocaleString('en-GB');
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+
+/* ---------- drawing the sequence elements ---------- */
+const SEQC = {tok:['#EEEDFE', '#534AB7'], num:['#FAEEDA', '#854F0B'], enc:['#E1F5EE', '#0F6E56'], dec:['#FBEAF0', '#993556'], out:['#FAECE7', '#993C1D'], grey:['#ecebe6', '#73726c']};
+function arrowOut(g, x, y) {
+  el('line', {x1:x + 2, y1:y, x2:x + 20, y2:y, stroke:C.grey, 'stroke-width':1.2}, g);
+  el('path', {d:`M${x + 15},${y - 4} L${x + 21},${y} L${x + 15},${y + 4}`, fill:'none', stroke:C.grey, 'stroke-width':1.2}, g);
+}
+function box(g, x0, y0, w, h, [fill, stroke], lines, opts = {}) {
+  if (opts.stack) for (let k = Math.min(opts.stack, 3) - 1; k >= 1; k--)
+    el('rect', {x:x0 + 4 * k, y:y0 - 4 * k, width:w, height:h, rx:6, fill, stroke, 'stroke-width':0.6, opacity:0.55}, g);
+  el('rect', {x:x0, y:y0, width:w, height:h, rx:6, fill, stroke, 'stroke-width':0.8, class:'outline', ...(opts.dashed ? {'stroke-dasharray':'4 3'} : {})}, g);
+  const cy = y0 + h / 2, step = 15, top = cy - (lines.length - 1) * step / 2;
+  lines.forEach((t, i) => text(g, x0 + w / 2, top + i * step, t, 'lbl', {fill:stroke, ...(i === 0 ? {'font-weight':600} : {})}));
+}
+// the pictures of the sequence elements: what each one does, drawn; its settings in grey labels underneath
+const PAL = {tok:{f:'#EEEDFE', s:'#534AB7', t:'#3C3489', col:'#CECBF6'}, num:{f:'#FAEEDA', s:'#854F0B', t:'#633806'},
+  enc:{f:'#E1F5EE', s:'#0F6E56', c:'#9FE1CB'}, dec:{f:'#FBEAF0', s:'#993556', c:'#F4C0D1'}, out:{f:'#FAECE7', s:'#993C1D', bar:'#F0997B'},
+  grey:{f:'#ecebe6', s:'#73726c', c:'#d3d1c7'}};
+const slabCount = n => Math.min(Math.max(+n.layers || 1, 1), 3);
+const SEQ_SIZE = {
+  tokens:() => ({w:94, h:20}), numbers:() => ({w:94, h:20}), embed:n => ({w:n.shared || n.scale ? 84 : 60, h:72}), project:() => ({w:70, h:56}), add:() => ({w:34, h:34}),
+  encoder:n => ({w:116, h:slabCount(n) * 34 + (slabCount(n) - 1) * 8}), decoder:n => ({w:116, h:Math.max(2, slabCount(n)) * 34 + (Math.max(2, slabCount(n)) - 1) * 8}),
+  seqsoftmax:() => ({w:68, h:70}), pick:() => ({w:94, h:40}), pool:() => ({w:94, h:52}), possoftmax:() => ({w:96, h:56}), regression:() => ({w:76, h:56}),
+};
+function sampleTokens(n) {
+  const given = String(n.sample || '').trim();
+  const t = given ? given.split(/\s+/) : /target/i.test(n.name || '') ? ['s', 'a', 'b', 'c', '/s'] : ['t1', 't2', 't3', 't4', 't5'];
+  return t.slice(0, 5).map(x => x.length > 2 ? x.slice(0, 2) : x);
+}
+function labelsBelow(g, n, y, lines) { lines.filter(Boolean).forEach((s, i) => text(g, n.x, y + 16 + i * 15, s)); }
+function selectable(g, x0, y0, w, h) { el('rect', {x:x0 - 4, y:y0 - 4, width:w + 8, height:h + 8, rx:8, fill:'none', stroke:'transparent', class:'outline'}, g); }
+function fan(g, x, yTop, yBottom, spread, stroke, k = 5) {
+  for (let i = 0; i < k; i++) el('line', {x1:x - spread / 2 + i * spread / (k - 1), y1:yBottom, x2:x, y2:yTop, stroke, 'stroke-width':0.7, opacity:0.85}, g);
+}
+function ffBlock(g, x, y, fill, stroke) { for (const [dx, dy] of [[0, 0], [10, 0], [0, 11], [10, 11]]) el('circle', {cx:x + dx, cy:y + dy, r:4, fill, stroke, 'stroke-width':0.5}, g); }
+function outLabel(g, n, x0, w) { arrowOut(g, x0 + w, n.y); text(g, x0 + w + 26, n.y, NetCore.outName(n), 'lblb'); }
+
+function drawSeq(g, n, x0, y0, w, h) {
+  selectable(g, x0, y0, w, h);
+  switch (n.kind) {
+    case 'tokens': case 'numbers': {
+      const P = n.kind === 'tokens' ? PAL.tok : PAL.num;
+      const cells = n.kind === 'tokens' ? sampleTokens(n) : ['.4', '0', '1.6', '0', '2.3'];
+      cells.forEach((c, i) => { const x = x0 + i * 19;
+        el('rect', {x, y:y0 + 1, width:17, height:17, rx:2, fill:P.f, stroke:P.s, 'stroke-width':0.8}, g);
+        text(g, x + 8.5, y0 + 10, c, 'lbl', {fill:P.t || P.s, 'font-size':10}); });
+      labelsBelow(g, n, y0 + h, [n.kind === 'tokens' ? `${n.name} · ${fmt(n.vocab)} tokens` : `${n.name} · ${n.size} per token`]);
+      break; }
+    case 'embed': {
+      const P = PAL.tok, top = y0 + 14;
+      for (let i = 0; i < 5; i++) el('rect', {x:x0 + i * 12, y:top, width:8, height:56, fill:P.col, stroke:P.s, 'stroke-width':0.6}, g);
+      if (n.pos === 'sinusoidal') el('path', {d:`M${x0},${y0 + 7} Q${x0 + 6},${y0 - 1} ${x0 + 12},${y0 + 7} T${x0 + 24},${y0 + 7} T${x0 + 36},${y0 + 7} T${x0 + 48},${y0 + 7} T${x0 + 56},${y0 + 7}`, fill:'none', stroke:PAL.num.s, 'stroke-width':1}, g);
+      else if (n.pos === 'learnt') for (let i = 0; i < 5; i++) el('rect', {x:x0 + i * 12 + 1, y:y0 + 3, width:6, height:6, rx:1, fill:PAL.num.f, stroke:PAL.num.s, 'stroke-width':0.5}, g);
+      if (n.shared) { el('circle', {cx:x0 + 74, cy:top + 4, r:9, fill:PAL.num.f, stroke:PAL.num.s, 'stroke-width':0.6}, g); text(g, x0 + 74, top + 4, String(n.shared).slice(0, 2), 'lbl', {fill:PAL.num.t, 'font-size':10}); }
+      if (n.scale) text(g, x0 + 74, top + 30, '×√d', 'lbl', {fill:P.t, 'font-size':10});
+      labelsBelow(g, n, y0 + h, [`Embedding · d ${n.d}`, `${n.pos === 'learnt' ? 'learnt' : n.pos === 'sinusoidal' ? 'sinusoidal' : 'no'} positions${n.shared ? ` · shares ${n.shared}` : ''}`]);
+      break; }
+    case 'project': {
+      const P = PAL.grey;
+      for (let i = 0; i < 4; i++) { el('rect', {x:x0 + i * 18, y:y0 + 8, width:8, height:40, fill:P.c, stroke:P.s, 'stroke-width':0.6}, g);
+        el('circle', {cx:x0 + i * 18 + 4, cy:y0 + 2, r:2.5, fill:PAL.enc.c, stroke:PAL.enc.s, 'stroke-width':0.5}, g); }
+      labelsBelow(g, n, y0 + h, [`Per token · ${n.units} ${n.act === 'None' ? 'linear' : n.act}`]);
+      break; }
+    case 'add':
+      el('circle', {cx:n.x, cy:n.y, r:16, fill:PAL.grey.f, stroke:PAL.grey.s, 'stroke-width':0.8}, g);
+      text(g, n.x, n.y, '+', 'lblb', {'text-anchor':'middle'});
+      labelsBelow(g, n, y0 + h, ['Add']);
+      break;
+    case 'encoder': case 'decoder': {
+      const P = n.kind === 'encoder' ? PAL.enc : PAL.dec, k = n.kind === 'encoder' ? slabCount(n) : Math.max(2, slabCount(n));
+      for (let i = 0; i < k; i++) {
+        const sy = y0 + i * 42;
+        el('rect', {x:x0, y:sy, width:w, height:34, rx:6, fill:P.f, stroke:P.s, 'stroke-width':0.6}, g);
+        if (n.kind === 'encoder') fan(g, x0 + 34, sy + 6, sy + 28, 40, P.s);
+        else { fan(g, x0 + 24, sy + 6, sy + 28, 22, P.s, 3); fan(g, x0 + 58, sy + 6, sy + 28, 22, P.s, 3); }
+        ffBlock(g, x0 + w - 30, sy + 11, P.c, P.s);
+      }
+      if (+n.layers > k && n.kind === 'encoder') for (const dy of [-5, 0, 5]) el('circle', {cx:x0 + w + 8, cy:n.y + dy, r:1.4, fill:P.s}, g);
+      labelsBelow(g, n, y0 + h, [`${n.kind === 'encoder' ? 'Encoder' : 'Decoder'} · ${n.layers} layer${+n.layers === 1 ? '' : 's'}`,
+        `${n.kind === 'decoder' ? 'self + cross · ' : ''}${n.heads} heads · FF ${n.dff} ${n.act}`]);
+      if (n.kind === 'decoder') { text(g, x0 + 4, y0 - 9, '↓ target', 'lbl', {'text-anchor':'start', fill:P.s});
+        text(g, x0 - 12, y0 + h - 4, 'memory →', 'lbl', {'text-anchor':'end', fill:P.s}); }
+      break; }
+    case 'seqsoftmax': {
+      const P = PAL.out;
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:6, fill:'none', stroke:C.grey, 'stroke-width':0.6, 'stroke-dasharray':'4 3'}, g);
+      [[16, 6, 10], [26, 4, 8, 12]].forEach((bars, gi) => bars.forEach((bh, i) => {
+        el('rect', {x:x0 + 8 + gi * 30 + i * 7, y:y0 + h - 10 - bh, width:5, height:bh, fill:P.bar, stroke:P.s, 'stroke-width':0.5}, g); }));
+      text(g, n.x, y0 + 14, 'per token', 'lbl', {'font-size':10});
+      labelsBelow(g, n, y0 + h, [`Softmax · ${fmt(n.vocab)} tokens`, [n.tie ? `tied to ${n.tie}` : '', +n.smoothing > 0 ? `ε ${n.smoothing}` : ''].filter(Boolean).join(' · ')]);
+      outLabel(g, n, x0, w);
+      break; }
+    case 'pick': {
+      const k = Math.min(Math.max(+n.position || 1, 1), 5);
+      for (let i = 0; i < 5; i++) el('rect', {x:x0 + i * 19, y:y0 + 1, width:17, height:17, rx:2, fill:i + 1 === k ? PAL.enc.c : PAL.grey.f, stroke:i + 1 === k ? PAL.enc.s : PAL.grey.s, 'stroke-width':0.7}, g);
+      el('path', {d:`M${x0 + (k - 1) * 19 + 8.5},${y0 + 20} L${x0 + (k - 1) * 19 + 8.5},${y0 + 36}`, stroke:PAL.enc.s, 'stroke-width':1, 'marker-end':''}, g);
+      el('circle', {cx:x0 + (k - 1) * 19 + 8.5, cy:y0 + 36, r:2.5, fill:PAL.enc.s}, g);
+      labelsBelow(g, n, y0 + h, [`Pick · position ${n.position}`]);
+      break; }
+    case 'pool': {
+      for (let i = 0; i < 5; i++) { el('rect', {x:x0, y:y0 + i * 10 + 1, width:14, height:8, rx:1, fill:PAL.grey.f, stroke:PAL.grey.s, 'stroke-width':0.6}, g);
+        el('line', {x1:x0 + 14, y1:y0 + i * 10 + 5, x2:x0 + w - 18, y2:n.y, stroke:PAL.grey.s, 'stroke-width':0.6}, g); }
+      el('rect', {x:x0 + w - 18, y:n.y - 6, width:16, height:12, rx:2, fill:PAL.enc.c, stroke:PAL.enc.s, 'stroke-width':0.7}, g);
+      labelsBelow(g, n, y0 + h, [`${n.op || 'Mean'} pool`]);
+      break; }
+    case 'possoftmax': {
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:6, fill:'none', stroke:C.grey, 'stroke-width':0.6, 'stroke-dasharray':'4 3'}, g);
+      [6, 10, 30, 8, 5, 4].forEach((bh, i) => el('rect', {x:x0 + 10 + i * 13, y:y0 + h - 10 - bh, width:9, height:bh, fill:PAL.out.bar, stroke:PAL.out.s, 'stroke-width':0.5}, g));
+      labelsBelow(g, n, y0 + h, ['Softmax over positions']);
+      outLabel(g, n, x0, w);
+      break; }
+    case 'regression': {
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:6, fill:'none', stroke:C.grey, 'stroke-width':0.6, 'stroke-dasharray':'4 3'}, g);
+      const k = Math.min(Math.max(+n.outputs || 1, 1), 4), sp = (h - 16) / k;
+      for (let i = 0; i < k; i++) { const y = y0 + 8 + i * sp + sp / 2, len = [40, 26, 52, 34][i];
+        el('line', {x1:x0 + 10, y1:y, x2:x0 + 10 + len, y2:y, stroke:PAL.out.s, 'stroke-width':4, 'stroke-linecap':'round', opacity:0.75}, g); }
+      labelsBelow(g, n, y0 + h, [`Regression · ${n.outputs} output${+n.outputs === 1 ? '' : 's'}`]);
+      outLabel(g, n, x0, w);
+      break; }
+  }
+}
+
+/* ---------- render ---------- */
+function render() {
+  const gw = $('#gw'), gn = $('#gn'); gw.innerHTML = ''; gn.innerHTML = '';
+  for (const w of D.wires) {
+    const a = byId(w.from.node), b = byId(w.to.node); if (!a || !b) continue;
+    const p = portPos(a, 'out', w.from.port), q = portPos(b, 'in', w.to.port), d = wirePath(p, q);
+    const g = el('g', {'data-wire':w.id}, gw), isSel = sel && sel.type === 'wire' && sel.id === w.id;
+    const ga = glyphs(a, 'out'), gb = glyphs(b, 'in');
+    if (ga && gb && !isSel) {
+      const col = a.kind === 'slots' ? C.amber : C.grey;
+      for (const s of ga) for (const t of gb) el('line', {x1:s.x, y1:s.y, x2:t.x, y2:t.y, stroke:col, class:'fan', opacity:a.kind === 'slots' ? 0.45 : 0.5}, g);
+    } else {
+      // the wire and its arrowhead stop short of the input port, so the port circle never covers the head
+      const e = {x:q.x - 9, y:q.y};
+      el('path', {d:wirePath(p, e), class:'wire' + (isSel ? ' sel' : '')}, g);
+      if (!isSel) el('path', {d:`M${e.x - 6},${e.y - 4} L${e.x},${e.y} L${e.x - 6},${e.y + 4}`, fill:'none', stroke:C.grey, 'stroke-width':1.4, 'stroke-linecap':'round', 'stroke-linejoin':'round'}, g);
+    }
+    el('path', {d, class:'wire-hit'}, g);
+  }
+  for (const n of D.nodes) {
+    const g = el('g', {'data-node':n.id, class:'node' + (sel && sel.type === 'node' && sel.id === n.id ? ' sel' : '')}, gn);
+    const {w, h} = size(n), x0 = n.x - w / 2, y0 = n.y - h / 2;
+    el('rect', {x:x0 - 8, y:y0 - 8, width:w + 16, height:h + 16, rx:6, class:'grip'}, g);
+    if (n.kind === 'feature') {
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:4, fill:C.purpleF, stroke:C.purple, 'stroke-width':0.8, class:'outline'}, g);
+      text(g, n.x, n.y, NetCore.FEATURE_LABEL[n.key] || n.key, 'lbl', {fill:C.purple});
+    } else if (n.kind === 'hash') {
+      el('polygon', {points:`${x0},${y0} ${x0 + w},${n.y - h * 0.22} ${x0 + w},${n.y + h * 0.22} ${x0},${y0 + h}`, fill:C.greyF, stroke:C.grey, 'stroke-width':0.8, class:'outline'}, g);
+      text(g, n.x - 2, n.y, 'Hash');
+      text(g, n.x, y0 + h + 16, `${fmt(n.slots)} slots`);
+    } else if (n.kind === 'slots') {
+      for (let i = 0; i < CELLS; i++) el('rect', {x:x0, y:y0 + i * 12, width:w, height:12, fill:LIT.includes(i) ? C.amber : '#fff', stroke:C.grey, 'stroke-width':0.6}, g);
+      el('rect', {x:x0, y:y0, width:w, height:h, fill:'none', stroke:C.grey, 'stroke-width':0.8, class:'outline'}, g);
+      text(g, n.x, y0 + h + 16, `${fmt(n.size)} slots`);
+    } else if (n.kind === 'dense') {
+      el('rect', {x:x0 - 4, y:y0 - 4, width:w + 8, height:h + 8, rx:10, fill:'none', stroke:'transparent', class:'outline'}, g);
+      for (const cy of unitYs(n)) el('circle', {cx:n.x, cy, r:9, fill:C.tealF, stroke:C.teal, 'stroke-width':0.8}, g);
+      // more units than are drawn: four circles, a gap with three dots, four circles
+      if (+n.units > 8) for (const dy of [-7, 0, 7]) el('circle', {cx:n.x, cy:n.y + dy, r:1.6, fill:C.teal}, g);
+      text(g, n.x, y0 + h + 18, `${fmt(n.units)} ${n.act === 'None' ? 'linear' : n.act} units`);
+    } else if (n.kind === 'dropout') {
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:4, fill:'#fff', stroke:C.grey, 'stroke-width':0.8, 'stroke-dasharray':'3 2', class:'outline'}, g);
+      text(g, n.x, n.y, `Dropout ${n.rate}`);
+    } else if (n.kind === 'concat') {
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:3, fill:C.greyF, stroke:C.grey, 'stroke-width':0.8, class:'outline'}, g);
+      text(g, n.x, y0 + h + 16, 'Join');
+    } else if (n.kind === 'softmax') {
+      const cl = NetCore.classesOf(n), many = cl.length > 6;
+      el('rect', {x:x0, y:y0, width:w, height:h, rx:8, fill:'none', stroke:C.grey, 'stroke-width':0.8, 'stroke-dasharray':'4 3', class:'outline'}, g);
+      cl.slice(0, 6).forEach((c, i) => {
+        const cy = y0 + 28 + i * (many ? 34 : 64);
+        el('circle', {cx:n.x, cy, r:12, fill:C.coralF, stroke:C.coral, 'stroke-width':0.8}, g);
+        if (!many) { arrowOut(g, x0 + w, cy); text(g, x0 + w + 26, cy, cap(c), 'lblb'); }
+      });
+      // more than six classes: six circles are drawn, and one arrow names the output and its number of classes
+      if (many) { arrowOut(g, x0 + w, n.y); text(g, x0 + w + 26, n.y - 8, NetCore.outName(n), 'lblb'); text(g, x0 + w + 26, n.y + 10, `${cl.length} classes`, 'lbl', {'text-anchor':'start'}); }
+      text(g, n.x, y0 + h + 16, 'Softmax');
+    } else if (NetCore.SEQ_KINDS.includes(n.kind)) {
+      drawSeq(g, n, x0, y0, w, h);
+    }
+    for (let i = 0; i < NetCore.ins(n); i++) { const p = portPos(n, 'in', i); el('circle', {cx:p.x, cy:p.y, r:6, class:'port', 'data-pn':n.id, 'data-side':'in', 'data-port':i}, gn); }
+    for (let i = 0; i < NetCore.outs(n); i++) { const p = portPos(n, 'out', i); el('circle', {cx:p.x, cy:p.y, r:6, class:'port', 'data-pn':n.id, 'data-side':'out', 'data-port':i}, gn); }
+  }
+  applyView(); summary(); save();
+}
+function applyView() { $('#world').setAttribute('transform', `scale(${view.s}) translate(${-view.x},${-view.y})`); }
+function fit() {
+  const svg = $('#canvas'), r = svg.getBoundingClientRect();
+  if (!D.nodes.length || !r.width) { view = {x:0, y:0, s:1}; applyView(); return; }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  D.nodes.forEach(n => { const {w, h} = size(n), extra = ['softmax', 'seqsoftmax', 'possoftmax', 'regression'].includes(n.kind) ? 110 : 10; x0 = Math.min(x0, n.x - w / 2 - 10); x1 = Math.max(x1, n.x + w / 2 + extra); y0 = Math.min(y0, n.y - h / 2 - 22); y1 = Math.max(y1, n.y + h / 2 + 46); });
+  const s = Math.min(1.6, (r.width - 60) / (x1 - x0), (r.height - 60) / (y1 - y0));
+  view.s = Math.max(0.2, s); view.x = (x0 + x1) / 2 - r.width / 2 / view.s; view.y = (y0 + y1) / 2 - r.height / 2 / view.s;
+  applyView();
+}
+
+/* ---------- interaction (as in the CCN String Diagrams editor) ---------- */
+const svg = $('#canvas');
+const toWorld = e => { const r = svg.getBoundingClientRect(); return {x:(e.clientX - r.left) / view.s + view.x, y:(e.clientY - r.top) / view.s + view.y}; };
+let drag = null;
+svg.addEventListener('pointerdown', e => {
+  const t = e.target, pt = toWorld(e);
+  if (t.classList.contains('port')) {
+    drag = {type:'wire', node:t.dataset.pn, side:t.dataset.side, port:+t.dataset.port};
+    drag.p = portPos(byId(drag.node), drag.side, drag.port);
+    svg.setPointerCapture(e.pointerId); e.preventDefault(); return;
+  }
+  const g = t.closest('[data-node]');
+  if (g) { const n = byId(g.dataset.node); select({type:'node', id:n.id}); drag = {type:'move', n, ox:pt.x - n.x, oy:pt.y - n.y, snap:snapshot(), moved:false}; svg.setPointerCapture(e.pointerId); return; }
+  const w = t.closest('[data-wire]');
+  if (w) { select({type:'wire', id:w.dataset.wire}); return; }
+  select(null);
+  drag = {type:'pan', sx:e.clientX, sy:e.clientY, vx:view.x, vy:view.y}; svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag) return; const pt = toWorld(e);
+  if (drag.type === 'wire') $('#temp').setAttribute('d', drag.side === 'out' ? wirePath(drag.p, pt) : wirePath(pt, drag.p));
+  else if (drag.type === 'move') { drag.n.x = Math.round((pt.x - drag.ox) / 5) * 5; drag.n.y = Math.round((pt.y - drag.oy) / 5) * 5; drag.moved = true; render(); }
+  else if (drag.type === 'pan') { view.x = drag.vx - (e.clientX - drag.sx) / view.s; view.y = drag.vy - (e.clientY - drag.sy) / view.s; applyView(); }
+});
+svg.addEventListener('pointerup', e => {
+  if (!drag) return;
+  if (drag.type === 'wire') {
+    $('#temp').setAttribute('d', '');
+    const t = document.elementFromPoint(e.clientX, e.clientY);
+    if (t && t.classList && t.classList.contains('port') && t.dataset.side !== drag.side && t.dataset.pn !== drag.node) {
+      const other = {node:t.dataset.pn, side:t.dataset.side, port:+t.dataset.port};
+      const from = drag.side === 'out' ? drag : other, to = drag.side === 'out' ? other : drag;
+      connect({node:from.node, port:from.port}, {node:to.node, port:to.port});
+    }
+  } else if (drag.type === 'move' && drag.moved) pushUndo(drag.snap);
+  drag = null;
+});
+svg.addEventListener('wheel', e => {
+  e.preventDefault(); const pt = toWorld(e); const f = Math.exp(-e.deltaY * 0.0015);
+  const s = Math.min(4, Math.max(0.15, view.s * f)); const r = svg.getBoundingClientRect();
+  view.s = s; view.x = pt.x - (e.clientX - r.left) / s; view.y = pt.y - (e.clientY - r.top) / s; applyView();
+}, {passive:false});
+svg.addEventListener('dblclick', e => { const g = e.target.closest('[data-node]'); if (g) { select({type:'node', id:g.dataset.node}); const f = $('#insp input, #insp select'); if (f) f.focus(); } });
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if ((e.key === 'Delete' || e.key === 'Backspace') && !typing && sel) { e.preventDefault(); delSel(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); doUndo(); }
+});
+
+// an input port takes one wire; an output may feed several (a branch)
+function connect(from, to) {
+  pushUndo();
+  D.wires = D.wires.filter(w => !(w.to.node === to.node && w.to.port === to.port));
+  D.wires.push({id:newId('w'), from, to});
+  render();
+}
+function delSel() {
+  if (!sel) return; pushUndo();
+  if (sel.type === 'node') { D.nodes = D.nodes.filter(n => n.id !== sel.id); D.wires = D.wires.filter(w => w.from.node !== sel.id && w.to.node !== sel.id); }
+  else D.wires = D.wires.filter(w => w.id !== sel.id);
+  select(null);
+}
+function doUndo() { if (!undo.length) return; D = JSON.parse(undo.pop()); select(null); }
+function select(s) { sel = s; render(); inspector(); }
+
+const DEFAULTS = {
+  feature:{kind:'feature', key:'Own'},
+  hash:{kind:'hash', nIn:5, slots:2048},
+  slots:{kind:'slots', size:2048},
+  dense:{kind:'dense', units:32, act:'ReLU'},
+  dropout:{kind:'dropout', rate:0.5},
+  concat:{kind:'concat', nIn:2},
+  softmax:{kind:'softmax', classes:'object, other', name:'Class'},
+  tokens:{kind:'tokens', name:'Input', vocab:32},
+  numbers:{kind:'numbers', name:'Dims', size:1},
+  embed:{kind:'embed', d:128, pos:'learnt', maxLen:96, scale:false, shared:''},
+  project:{kind:'project', units:128, act:'None'},
+  add:{kind:'add', nIn:2},
+  encoder:{kind:'encoder', layers:3, heads:4, dff:512, act:'GELU'},
+  decoder:{kind:'decoder', layers:3, heads:4, dff:512, act:'GELU'},
+  seqsoftmax:{kind:'seqsoftmax', name:'Probabilities', vocab:22, tie:'', smoothing:0},
+  pick:{kind:'pick', position:1},
+  pool:{kind:'pool', op:'Mean'},
+  possoftmax:{kind:'possoftmax', name:'Node'},
+  regression:{kind:'regression', name:'Estimate', target:'Target', outputs:3},
+};
+function addNode(kind) {
+  pushUndo();
+  const r = svg.getBoundingClientRect();
+  const c = {x:view.x + r.width / 2 / view.s + (Math.random() - 0.5) * 80, y:view.y + r.height / 2 / view.s + (Math.random() - 0.5) * 60};
+  const n = Object.assign({id:newId('n'), x:Math.round(c.x), y:Math.round(c.y)}, DEFAULTS[kind]);
+  if (kind === 'feature') { const used = D.nodes.filter(m => m.kind === 'feature').map(m => m.key); n.key = NetCore.FEATURE_KEYS.find(k => !used.includes(k)) || 'Own'; }
+  D.nodes.push(n); select({type:'node', id:n.id});
+}
+document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => addNode(b.dataset.add));
+
+/* ---------- inspector ---------- */
+const escA = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function inspector() {
+  const box = $('#insp');
+  if (!sel) { box.className = 'hint'; box.innerHTML = 'Nothing selected. Click an element or a wire.'; return; }
+  box.className = '';
+  if (sel.type === 'wire') {
+    const w = D.wires.find(x => x.id === sel.id); if (!w) return;
+    box.innerHTML = `<div class="hint">A wire from ${escA(NetCore.describe(byId(w.from.node)))} to ${escA(NetCore.describe(byId(w.to.node)))}.</div><div class="row" style="margin-top:8px"><button id="iDel">Delete wire</button></div>`;
+    $('#iDel').onclick = delSel; return;
+  }
+  const n = byId(sel.id); if (!n) return;
+  const opt = (vals, cur, lab = v => v) => vals.map(v => `<option value="${v}"${v === cur ? ' selected' : ''}>${escA(lab(v))}</option>`).join('');
+  const H = {
+    feature:`<label>Feature</label><select id="iKey">${opt(NetCore.FEATURE_KEYS, n.key, k => NetCore.FEATURE_LABEL[k])}</select>
+      <div class="hint" style="margin-top:6px">The words of the motion part this feature reads, as MotionSubject gives them.</div>`,
+    hash:`<div class="row"><div><label>Inputs</label><input type="number" id="iNIn" min="1" max="12" value="${n.nIn}"></div>
+      <div><label>Slots</label><input type="number" id="iSlots" min="1" value="${n.slots}"></div></div>
+      <div class="hint" style="margin-top:6px">Each feature word lands in slot Mod[Hash[word, "CRC32"], slots] + 1.</div>`,
+    slots:`<label>Slots (the length of the input vector)</label><input type="number" id="iSize" min="1" value="${n.size}">
+      <div class="hint" style="margin-top:6px">Fed by a Hash, it takes the Hash's slots. With nothing feeding it, it is a plain input vector for your own data.</div>`,
+    dense:`<div class="row"><div><label>Units</label><input type="number" id="iUnits" min="1" value="${n.units}"></div>
+      <div><label>Activation</label><select id="iAct">${opt(NetCore.ACTS, n.act)}</select></div></div>`,
+    dropout:`<label>Rate</label><input type="number" id="iRate" min="0" max="0.95" step="0.05" value="${n.rate}">`,
+    concat:`<label>Inputs</label><input type="number" id="iNIn" min="2" max="8" value="${n.nIn}">`,
+    softmax:`<label>Classes, separated by commas</label><input type="text" id="iClasses" value="${escA(n.classes)}">
+      <label>Name (in a net with Tokens: its port, and its target port)</label><input type="text" id="iName" value="${escA(n.name || 'Class')}">
+      <div class="hint" style="margin-top:6px">With SubjectNet's data the classes are <code>object, other</code>.</div>`,
+    tokens:`<div class="row"><div><label>Name (the port)</label><input type="text" id="iName" value="${escA(n.name)}"></div>
+      <div><label>Vocabulary size</label><input type="number" id="iVocab" min="1" value="${n.vocab}"></div></div>
+      <label>Sample tokens for the picture (up to five, separated by spaces)</label><input type="text" id="iSample" value="${escA(n.sample || '')}">
+      <div class="hint" style="margin-top:6px">A sequence of token indices, 1 to the vocabulary size. Tokens that reach a Decoder's target input are its target: the decoder reads them without the last, and the Softmax per token is scored on them without the first (teacher forcing).</div>`,
+    numbers:`<div class="row"><div><label>Name (the port)</label><input type="text" id="iName" value="${escA(n.name)}"></div>
+      <div><label>Numbers per token</label><input type="number" id="iSizeN" min="1" value="${n.size}"></div></div>`,
+    embed:`<div class="row"><div><label>Width d</label><input type="number" id="iD" min="2" value="${n.d}"></div>
+      <div><label>Positions</label><select id="iPos">${opt(['learnt', 'sinusoidal', 'none'], n.pos)}</select></div></div>
+      <div class="row"><div><label>Longest sequence (learnt)</label><input type="number" id="iMaxLen" min="1" value="${n.maxLen}"></div>
+      <div><label>Shared weights (name)</label><input type="text" id="iShared" value="${escA(n.shared)}" placeholder="none"></div></div>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="iScale"${n.scale ? ' checked' : ''}> multiply by \u221ad</label>
+      <div class="hint" style="margin-top:6px">Embeddings with the same shared name use one weight array, as owNet's source, target and output do.</div>`,
+    project:`<div class="row"><div><label>Units</label><input type="number" id="iUnits" min="1" value="${n.units}"></div>
+      <div><label>Activation</label><select id="iAct">${opt(NetCore.seqActs, n.act)}</select></div></div><div class="hint" style="margin-top:6px">The same layer applied to every position.</div>`,
+    add:`<label>Inputs</label><input type="number" id="iNIn" min="2" max="8" value="${n.nIn}"><div class="hint" style="margin-top:6px">Adds sequences of the same width, position by position.</div>`,
+    encoder:`<div class="row"><div><label>Layers</label><input type="number" id="iLayers" min="1" value="${n.layers}"></div><div><label>Heads</label><input type="number" id="iHeads" min="1" value="${n.heads}"></div></div>
+      <div class="row"><div><label>Feed-forward width</label><input type="number" id="iDff" min="1" value="${n.dff}"></div><div><label>Activation</label><select id="iAct">${opt(['ReLU', 'GELU', 'Tanh', 'Sigmoid'], n.act)}</select></div></div>
+      <div class="hint" style="margin-top:6px">Each layer: multi-head self-attention, then a feed-forward net, each with a residual connection and layer normalisation. The width d comes from the input.</div>`,
+    decoder:`<div class="row"><div><label>Layers</label><input type="number" id="iLayers" min="1" value="${n.layers}"></div><div><label>Heads</label><input type="number" id="iHeads" min="1" value="${n.heads}"></div></div>
+      <div class="row"><div><label>Feed-forward width</label><input type="number" id="iDff" min="1" value="${n.dff}"></div><div><label>Activation</label><select id="iAct">${opt(['ReLU', 'GELU', 'Tanh', 'Sigmoid'], n.act)}</select></div></div>
+      <div class="hint" style="margin-top:6px">Upper input: the target sequence. Lower input: the memory, the encoder's output. Each layer: causal self-attention, cross-attention to the memory, and a feed-forward net.</div>`,
+    seqsoftmax:`<div class="row"><div><label>Name (the port)</label><input type="text" id="iName" value="${escA(n.name)}"></div>
+      <div><label>Vocabulary size</label><input type="number" id="iVocab" min="2" value="${n.vocab}"></div></div>
+      <div class="row"><div><label>Tied to shared weights</label><input type="text" id="iTie" value="${escA(n.tie)}" placeholder="none"></div>
+      <div><label>Label smoothing \u03b5</label><input type="number" id="iSmooth" min="0" max="0.5" step="0.05" value="${n.smoothing}"></div></div>`,
+    pick:`<label>Position</label><input type="number" id="iPosition" min="1" value="${n.position}"><div class="hint" style="margin-top:6px">The vector at one position; tnPolicyNet reads the goal token at position 1.</div>`,
+    pool:`<label>Pooling</label><select id="iOp">${opt(['Mean', 'Max', 'Sum'], n.op || 'Mean')}</select>`,
+    possoftmax:`<label>Name (its port, and its target port)</label><input type="text" id="iName" value="${escA(n.name)}"><div class="hint" style="margin-top:6px">One score per position, turned into a probability over the positions: which node to rewrite.</div>`,
+    regression:`<div class="row"><div><label>Name (the port)</label><input type="text" id="iName" value="${escA(n.name)}"></div><div><label>Outputs</label><input type="number" id="iOutputs" min="1" value="${n.outputs}"></div></div>
+      <label>Target port</label><input type="text" id="iTarget" value="${escA(n.target)}">`,
+  };
+  box.innerHTML = `<div class="hint" style="margin-bottom:4px">${escA(NetCore.describe(n))}</div>` + (H[n.kind] || '') + `<div class="row" style="margin-top:10px"><button id="iDel">Delete</button></div>`;
+  $('#iDel').onclick = delSel;
+  const on = (id, fn) => { const x = $(id); if (x) x.addEventListener('change', () => { pushUndo(); fn(x.value); trimWires(n); render(); inspector(); }); };
+  on('#iKey', v => n.key = v);
+  on('#iNIn', v => n.nIn = Math.max(n.kind === 'concat' || n.kind === 'add' ? 2 : 1, Math.min(12, Math.round(+v) || 1)));
+  on('#iSlots', v => n.slots = Math.max(1, Math.round(+v) || 1));
+  on('#iSize', v => n.size = Math.max(1, Math.round(+v) || 1));
+  on('#iUnits', v => n.units = Math.max(1, Math.round(+v) || 1));
+  on('#iAct', v => n.act = v);
+  on('#iRate', v => n.rate = Math.min(0.95, Math.max(0, +v || 0)));
+  on('#iClasses', v => n.classes = v);
+  const int = (v, lo = 1) => Math.max(lo, Math.round(+v) || lo);
+  on('#iName', v => n.name = v.trim().replace(/[^\w]/g, '') || n.name);
+  on('#iVocab', v => n.vocab = int(v));
+  on('#iSample', v => n.sample = v.trim());
+  on('#iSizeN', v => n.size = int(v));
+  on('#iD', v => n.d = int(v, 2));
+  on('#iPos', v => n.pos = v);
+  on('#iMaxLen', v => n.maxLen = int(v));
+  on('#iShared', v => n.shared = v.trim());
+  on('#iTie', v => n.tie = v.trim());
+  on('#iSmooth', v => n.smoothing = Math.min(0.5, Math.max(0, +v || 0)));
+  on('#iLayers', v => n.layers = int(v));
+  on('#iHeads', v => n.heads = int(v));
+  on('#iDff', v => n.dff = int(v));
+  on('#iPosition', v => n.position = int(v));
+  on('#iOp', v => n.op = v);
+  on('#iOutputs', v => n.outputs = int(v));
+  on('#iTarget', v => n.target = v.trim().replace(/[^\w]/g, '') || 'Target');
+  const sc = $('#iScale'); if (sc) sc.addEventListener('change', () => { pushUndo(); n.scale = sc.checked; render(); inspector(); });
+}
+function trimWires(n) { D.wires = D.wires.filter(w => !(w.to.node === n.id && w.to.port >= NetCore.ins(n)) && !(w.from.node === n.id && w.from.port >= NetCore.outs(n))); }
+
+/* ---------- the net, read from the drawing ---------- */
+function settings() {
+  return {lang:$('#sLang').value, name:$('#sName').value.trim() || 'NetFromDiagram', data:$('#sData').value, path:$('#sPath').value.trim(), pyPath:$('#sPyPath').value.trim() || '.',
+    epochs:+$('#sEpochs').value || 12, batch:+$('#sBatch').value || 64, seed:Math.round(+$('#sSeed').value || 0),
+    lr:+$('#sLr').value || 0.005, l2:+$('#sL2').value >= 0 ? +$('#sL2').value : 0.0001, versionA:$('#sA').checked, versionB:$('#sB').checked};
+}
+function summary() {
+  const r = NetCore.compile(D), box = $('#summary'), py = $('#sLang').value === 'python';
+  if (r.spec && py) {
+    r.errors = r.errors.concat(NetCore.pythonProblems(r.spec));
+    r.warnings = (r.warnings || []).filter(w => !/^The net branches/.test(w))
+      .map(w => /^Version A leaves dropout out/.test(w) ? 'The Python version leaves dropout out in this issue: our own code has no dropout yet.' : w);
+  }
+  let h = '';
+  if (r.spec && r.spec.seq) {
+    const s = r.spec, inputs = s.nodes.filter(n => n.kind === 'tokens' || n.kind === 'numbers');
+    h += `<div class="stat"><b>Inputs</b><span>${escA(inputs.map(n => n.kind === 'tokens' ? `${n.name} (${fmt(n.vocab)} tokens${n.target ? ', target' : ''})` : `${n.name} (${n.size} per token)`).join(', '))}</span>
+      <b>Outputs</b><span>${escA(s.outputs.map(n => NetCore.outName(n)).join(', '))}</span>
+      <b>Shape</b><span>a sequence net (NetGraph)</span>
+      <b>Language</b><span>${py ? 'Python: not yet for sequence nets' : 'Wolfram: NetGraph with Wolfram\u2019s layers'}</span>
+      <b>Weights</b><span>${fmt(s.learnt)} learnt</span>
+      <b>Wolfram counts</b><span>${fmt(s.total)}${s.fixed ? ` (with ${fmt(s.fixed)} fixed numbers)` : ''}</span></div>`;
+  } else if (r.spec) {
+    const s = r.spec;
+    h += `<div class="stat"><b>Input</b><span>${escA(s.input.type === 'hashed' ? s.input.features.map(k => NetCore.FEATURE_LABEL[k]).join(', ') + ' → ' + fmt(s.input.dim) + ' slots' : fmt(s.input.dim) + ' slots, your own vectors')}</span>
+      <b>Layers</b><span>${escA(s.graph.map(g => g.kind === 'dense' ? `${g.units} ${g.act}` : g.kind === 'dropout' ? `dropout ${g.rate}` : g.kind === 'concat' ? 'join' : `softmax ${g.classes.length}`).join(' → '))}</span>
+      <b>Shape</b><span>${s.chain ? 'a chain' + (py ? '' : ' (NetChain; our own code too)') : 'branches' + (py ? '' : ' (NetGraph only)')}</span>
+      <b>Language</b><span>${py ? 'Python: our own code' : 'Wolfram: our own code and NetTrain'}</span>
+      <b>Weights</b><span>${fmt(s.params)}</span></div>`;
+  }
+  h += r.errors.map(e => `<div class="err">${escA(e)}</div>`).join('') + (r.warnings || []).map(e => `<div class="warn">${escA(e)}</div>`).join('');
+  if (r.spec && !r.errors.length) h += `<div class="okline">Ready: Diagram → Code writes the ${py ? 'Python script' : 'notebook'}.</div>`;
+  box.innerHTML = h;
+  return r;
+}
+function generate() {
+  const r = summary();
+  const set = settings(), py = set.lang === 'python';
+  if (!r.spec || r.errors.length) { $('#code').value = (py ? '# Not ready yet:\n' + r.errors.map(e => '#   ' + e).join('\n') : '(* The diagram is not complete yet:\n' + r.errors.map(e => '   ' + e).join('\n') + ' *)'); lastCells = null; return null; }
+  if (py) { lastCells = {python:NetCore.pyScript(D, r.spec, set)}; $('#code').value = lastCells.python; return lastCells; }
+  if (!r.spec.seq && !set.versionA && !set.versionB) { $('#code').value = '(* Choose version A, version B or both in the training settings. *)'; lastCells = null; return null; }
+  lastCells = NetCore.cells(D, r.spec, set);
+  $('#code').value = NetCore.plain(lastCells);
+  return lastCells;
+}
+function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+$('#bD2C').onclick = generate;
+$('#bNb').onclick = () => { const c = generate(); if (!c) return;
+  if (c.python) download(NetCore.pyName(settings().name) + '.py', c.python, 'text/x-python');
+  else download((settings().name.replace(/[^\w-]+/g, '') || 'NetFromDiagram') + '.nb', NetCore.notebook(c), 'application/vnd.wolfram.mathematica'); };
+function langView() {
+  const py = $('#sLang').value === 'python';
+  document.body.classList.toggle('lang-python', py);
+  $('#bNb').textContent = py ? 'Download .py' : 'Download .nb';
+  $('#lName').textContent = py ? 'Script name' : 'Notebook name';
+  $('#code').placeholder = py ? 'Diagram → Code writes the Python script here.' : "Diagram → Code writes the notebook's cells here.";
+}
+$('#sLang').addEventListener('change', () => { langView(); summary(); save(); if (lastCells) generate(); else $('#code').value = ''; });
+$('#bCopy').onclick = () => { const c = generate(); if (c && navigator.clipboard) navigator.clipboard.writeText($('#code').value); };
+['#sName', '#sData', '#sPath', '#sPyPath', '#sEpochs', '#sBatch', '#sSeed', '#sLr', '#sL2', '#sA', '#sB'].forEach(id => $(id).addEventListener('change', () => { save(); if (lastCells) generate(); }));
+
+/* ---------- toolbar ---------- */
+$('#bDel').onclick = delSel;
+$('#bUndo').onclick = doUndo;
+$('#bClear').onclick = () => { pushUndo(); D = {nodes:[], wires:[]}; select(null); };
+$('#bFit').onclick = fit;
+$('#bSave').onclick = () => download('net-diagram.json', JSON.stringify({diagram:D, settings:settings()}, null, 1), 'application/json');
+$('#bLoad').onclick = () => $('#file').click();
+$('#file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { const j = JSON.parse(t); pushUndo(); D = j.diagram || {nodes:[], wires:[]}; if (j.settings) putSettings(j.settings); select(null); fit(); } catch (err) { alert('Could not read that file: ' + err.message); } }); e.target.value = ''; };
+$('#bSvg').onclick = () => {
+  const s = sel; sel = null; render();
+  const clone = svg.cloneNode(true); clone.querySelectorAll('.port,.wire-hit,.grip,#temp').forEach(x => x.remove());
+  const bb = $('#world').getBBox(); clone.querySelector('#world').removeAttribute('transform');
+  const pad = 24; clone.setAttribute('viewBox', `${bb.x - pad} ${bb.y - pad} ${bb.width + 2 * pad} ${bb.height + 2 * pad + 18}`);
+  clone.setAttribute('width', bb.width + 2 * pad); clone.setAttribute('height', bb.height + 2 * pad + 18); clone.removeAttribute('id'); clone.removeAttribute('style');
+  const st = document.createElementNS(NS, 'style');
+  st.textContent = `.wire{fill:none;stroke:#73726c;stroke-width:1.4}.lbl{font:12px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#3d3d3a}.lblb{font:600 14px system-ui,sans-serif;dominant-baseline:central;fill:#2c2c2a}.fan{stroke-width:.7}`;
+  clone.insertBefore(st, clone.firstChild);
+  const c = document.createElementNS(NS, 'text'); c.setAttribute('x', bb.x + bb.width + pad - 4); c.setAttribute('y', bb.y + bb.height + 2 * pad + 10); c.setAttribute('text-anchor', 'end'); c.setAttribute('font-size', '10'); c.setAttribute('font-family', 'system-ui,sans-serif'); c.setAttribute('fill', '#6b665a');
+  c.textContent = 'By Dara O Shayda and Hikari Noor Hoshino (星野ヌール) · © Computational Classnotes · CC BY-NC-SA 4.0';
+  clone.appendChild(c);
+  download('net-diagram.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone), 'image/svg+xml');
+  sel = s; render();
+};
+
+/* ---------- the example: SubjectNet, as drawn in nets/SubjectNet.nb ---------- */
+function subjectNetDiagram() {
+  const nodes = [], wires = [];
+  NetCore.FEATURE_KEYS.forEach((k, i) => nodes.push({id:'f' + i, kind:'feature', key:k, x:100, y:60 + i * 44}));
+  nodes.push({id:'h', kind:'hash', nIn:5, slots:2048, x:240, y:148});
+  nodes.push({id:'s', kind:'slots', size:2048, x:330, y:148});
+  nodes.push({id:'d', kind:'dense', units:32, act:'ReLU', x:470, y:148});
+  nodes.push({id:'o', kind:'softmax', classes:'object, other', x:610, y:148});
+  NetCore.FEATURE_KEYS.forEach((k, i) => wires.push({id:'w' + i, from:{node:'f' + i, port:0}, to:{node:'h', port:i}}));
+  wires.push({id:'wh', from:{node:'h', port:0}, to:{node:'s', port:0}});
+  wires.push({id:'ws', from:{node:'s', port:0}, to:{node:'d', port:0}});
+  wires.push({id:'wd', from:{node:'d', port:0}, to:{node:'o', port:0}});
+  return {nodes, wires};
+}
+$('#exSel').innerHTML = '<option value="">Examples\u2026</option>' + NetCore.EXAMPLES.map(([k, t]) => `<option value="${k}">${escA(t)}</option>`).join('');
+const EXAMPLE_NAMES = {subjectnet:'SubjectNetFromDiagram', ownet:'owNetFromDiagram', tnparser:'tnParserNetFromDiagram', tnpolicy:'tnPolicyNetFromDiagram', tnvalue:'tnValueNetFromDiagram'};
+$('#exSel').onchange = e => { const k = e.target.value; if (!k) return; pushUndo(); D = NetCore.example(k); $('#sName').value = EXAMPLE_NAMES[k] || $('#sName').value; select(null); fit(); save(); e.target.value = ''; };
+$('#addSeq').onchange = e => { const k = e.target.value; if (k) addNode(k); e.target.value = ''; };
+
+/* ---------- persistence ---------- */
+// ?example=<name> opens that example first, and keeps its own saved work apart from the editor's other pages
+// (tensor-algebra-nets opens it with ?example=tnparser; the free-form language opens it plain, on SubjectNet)
+const START = (() => { const k = new URLSearchParams(location.search).get('example'); return NetCore.EXAMPLES.some(([x]) => x === k) ? k : null; })();
+const KEY = 'ccn-net-diagrams-v1' + (START ? '-' + START : '');
+function putSettings(s) {
+  if (s.lang) $('#sLang').value = s.lang; if (s.pyPath) $('#sPyPath').value = s.pyPath;
+  if (s.name != null) $('#sName').value = s.name; if (s.data) $('#sData').value = s.data; if (s.path) $('#sPath').value = s.path;
+  for (const [k, id] of [['epochs', '#sEpochs'], ['batch', '#sBatch'], ['seed', '#sSeed'], ['lr', '#sLr'], ['l2', '#sL2']]) if (s[k] != null) $(id).value = s[k];
+  if (s.versionA != null) $('#sA').checked = !!s.versionA; if (s.versionB != null) $('#sB').checked = !!s.versionB;
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify({D, settings:settings()})); } catch (_) {} }
+function load() { try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j && j.D) { D = j.D; if (j.settings) putSettings(j.settings); return true; } } catch (_) {} return false; }
+
+if (!load() || !D.nodes.length) { D = START ? NetCore.example(START) : subjectNetDiagram(); if (START) $('#sName').value = EXAMPLE_NAMES[START]; }
+langView(); render(); inspector(); requestAnimationFrame(fit);
+window.addEventListener('resize', () => applyView());
+</script>
+</body>
+</html>

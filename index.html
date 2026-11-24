@@ -1,28 +1,48 @@
 <!DOCTYPE html>
-<html lang="en-GB">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CCN Nets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a2540;--ink:#f2f7fb;--soft:#a9c3da;--sky:#8fd3ff}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:17px/1.55 "Hanken Grotesk",system-ui,sans-serif;padding:24px}
-main{max-width:640px}
-h1{font-weight:300;font-size:clamp(36px,6vw,56px);line-height:1.05;margin:0 0 12px}
-p{color:var(--soft);margin:0 0 14px}
-b{color:var(--sky);font-weight:600}
-footer{margin-top:36px;font-size:13px;color:var(--soft)}
-</style>
-</head>
-<body>
-<main>
-  <h1>CCN Nets</h1>
-  <p>The neural nets of Computational Classnotes: each one drawn, trained, opened up and written up, with its training record, its matrices and a 3D flight through its weights.</p>
-  <p><b>Coming soon.</b> The first net to arrive is SubjectNet, from the CCN agent free-form language.</p>
-  <footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
-</main>
-</body>
-</html>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<header class="top"><h1>CCN Nets</h1>
+<p class="lede">The neural nets of Computational Classnotes: each one drawn, trained with our own code, opened up and written up, with its training record, its matrices and a 3D flight through its weights.</p>
+<div class="actions"><a class="btn alt" href="editor/net-diagram-editor.html">Open the net-diagram editor</a></div></header>
+<main class="band"><h2>CCN agent free-form language</h2><div class="grid"><a class="panel card" style="text-decoration:none;color:inherit" href="free-form/subjectnet/"><h3>SubjectNet</h3><p>Decides whether a motion part of a sentence is about the object being moved (&quot;the drone should rise 4 metres&quot;) or about something else (&quot;Mia turned to her brother&quot;), so that the motion reader keeps only the right parts.</p><span class="tag">65,634 numbers</span> <span class="tag">trained</span></a></div></main>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>

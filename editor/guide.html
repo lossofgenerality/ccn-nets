@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The net-diagram editor: how it works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<main class="band write"><p class="crumb"><a href="../">CCN Nets</a> · <a href="net-diagram-editor.html">Open the editor</a></p><h1>CCN Net Diagrams: the editor</h1>
+<p><code>net-diagram-editor.html</code> is a single self-contained page that runs offline in a browser. Open it, draw a small neural net, and press <strong>Diagram → Code</strong>. The page writes a Wolfram notebook (<code>.nb</code>) or a Python script (<code>.py</code>); see "Wolfram or Python" below. The notebook builds the net drawn and trains it in two versions:</p>
+<ul>
+<li><strong>A, our own code:</strong> the forward pass, backpropagation and Adam are written out, and no Wolfram neural-net function is used.</li>
+<li><strong>B, Wolfram's code:</strong> <code>NetChain</code> (or <code>NetGraph</code> when the drawing branches) with <code>NetTrain</code>.</li>
+</ul>
+<p>The page keeps the structure of the CCN String Diagrams editor (<code>lossofgenerality/ccn-string-diagrams</code>): the canvas, drawing wires from port to port, moving, zooming, panning, undo, the inspector, Save and Open as JSON, and Export SVG. The string-diagram mathematics is replaced by the elements of a net.</p>
+<h2>Shared with tensor-algebra-nets</h2>
+<p><code>lossofgenerality/tensor-algebra-nets</code> shows this editor on its site, at <code>docs/net-diagrams.html</code>, by loading it from https://lossofgenerality.github.io/ccn-agent-free-form-language/editor/net-diagram-editor.html?example=tnparser.</p>
+<p><strong>Opening on an example.</strong> <code>?example=</code> followed by <code>subjectnet</code>, <code>ownet</code>, <code>tnparser</code>, <code>tnpolicy</code> or <code>tnvalue</code> opens the editor on that example. It also gives that page its own saved work in the browser, so a change made on the TensorNets page doesn't appear on this one, nor the other way round. Without it, the editor opens on SubjectNet, as on this project's site. A change pushed here therefore appears there at once; nothing needs copying. <strong>Keep this file's name and place.</strong> If it ever moves, change <code>EDITOR</code> in tensor-algebra-nets' <code>tools/units/build_glossary.py</code> and rebuild there.</p>
+<h2>The elements</h2>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Drawn as</th>
+<th>What it is</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feature</td>
+<td>purple box</td>
+<td>a group of words from a motion part: own words, verb, words after, words before, joining word (as <code>MotionSubject</code> gives them)</td>
+<td>which group</td>
+</tr>
+<tr>
+<td>Hash</td>
+<td>grey funnel</td>
+<td>puts each feature word into a slot, <code>Mod[Hash[word, "CRC32"], slots] + 1</code></td>
+<td>inputs, slots</td>
+</tr>
+<tr>
+<td>Slots</td>
+<td>column of cells</td>
+<td>the input vector; fed by a Hash, or with nothing feeding it a plain vector for your own data</td>
+<td>length</td>
+</tr>
+<tr>
+<td>Layer</td>
+<td>column of teal circles (up to eight are drawn)</td>
+<td>a fully connected layer</td>
+<td>units; activation ReLU, Tanh, Sigmoid or None</td>
+</tr>
+<tr>
+<td>Dropout</td>
+<td>dashed box</td>
+<td>dropout (version B only in this issue)</td>
+<td>rate</td>
+</tr>
+<tr>
+<td>Join</td>
+<td>grey bar</td>
+<td>joins branches side by side (version B only)</td>
+<td>inputs</td>
+</tr>
+<tr>
+<td>Softmax</td>
+<td>dashed box of coral circles with the class names</td>
+<td>the output: one unit per class, softmax, cross-entropy loss</td>
+<td>classes</td>
+</tr>
+</tbody>
+</table>
+<p>Wires run from an output port (right side) to an input port (left side). An input port takes one wire; an output may feed several, which makes a branch.</p>
+<p>The panel on the right reads the drawing as you work. It shows the input, the layers, whether the net is a chain, and the number of weights, with any errors or warnings. <strong>Example: SubjectNet</strong> draws the net of <code>nets/SubjectNet.nb</code>: 2,048 slots, 32 ReLU units, two classes and 65,634 weights.</p>
+<h2>Sequence nets: transformers</h2>
+<p>The editor also draws the transformers of <code>lossofgenerality/tensor-algebra-nets</code>. They are added from <strong>+ Sequence element…</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>What it is</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tokens</td>
+<td>an input sequence of token indices (a port of the net)</td>
+<td>name, vocabulary size</td>
+</tr>
+<tr>
+<td>Numbers per token</td>
+<td>an input with a few numbers at every position</td>
+<td>name, numbers per token</td>
+</tr>
+<tr>
+<td>Embedding</td>
+<td>a learnt vector for each token, with positions added</td>
+<td>width d; learnt, sinusoidal or no positions; longest sequence; shared weights (a name); multiply by √d</td>
+</tr>
+<tr>
+<td>Per-token layer</td>
+<td>the same dense layer at every position</td>
+<td>units, activation</td>
+</tr>
+<tr>
+<td>Add</td>
+<td>adds sequences of one width, position by position</td>
+<td>inputs</td>
+</tr>
+<tr>
+<td>Encoder</td>
+<td>layers of multi-head self-attention and a feed-forward net, each with a residual connection and layer normalisation</td>
+<td>layers, heads, feed-forward width, activation</td>
+</tr>
+<tr>
+<td>Decoder</td>
+<td>layers of causal self-attention, cross-attention to the encoder (the lower input) and a feed-forward net</td>
+<td>the same</td>
+</tr>
+<tr>
+<td>Pick, Pool</td>
+<td>one position, or the mean, maximum or sum over positions</td>
+<td>position; pooling</td>
+</tr>
+<tr>
+<td>Softmax per token</td>
+<td>an output: a probability over the vocabulary at every position, optionally tied to shared weights, with label smoothing</td>
+<td>name, vocabulary, tie, ε</td>
+</tr>
+<tr>
+<td>Softmax over positions</td>
+<td>an output: which position</td>
+<td>name</td>
+</tr>
+<tr>
+<td>Regression</td>
+<td>an output of a few numbers, with a mean-squared loss</td>
+<td>name, outputs, target port</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The pictures.</strong> Each sequence element is drawn as what it does, in the style of SubjectNet's elements, with its settings in grey labels underneath:
+- tokens as a row of cells (the sample tokens can be set);
+- an embedding as columns of vectors, with a wave for sinusoidal positions or small squares for learnt ones, and a badge for shared weights;
+- the encoder and decoder as stacked layers with fans of attention and feed-forward blocks;
+- the outputs as probability bars or value bars.</p>
+<p><strong>Teacher forcing.</strong> Tokens that reach a Decoder's target input are its target. The decoder reads them without the last token, and the Softmax per token is scored on them without the first. The Softmax (classes) and Dense elements work after Pick or Pool.</p>
+<p><strong>Examples</strong>, under Examples…:
+- owNet, the trained net of Unit 4;
+- tnParserNet, tnPolicyNet and tnValueNet, the three nets of the TensorNets design.</p>
+<p>They are drawn from the nets' definitions, in <code>tools/units/unit4.py</code> and <code>ff_tensornets_new.nb</code>.</p>
+<p><strong>The count.</strong> The panel gives the learnt weights, and the number Wolfram's <code>Information[net, "ArraysTotalElementCount"]</code> reports. That number also counts fixed arrays: sinusoidal positions (2 × d for each embedding) and the label-smoothing table (V × V).</p>
+<p><strong>The code.</strong> Diagram → Code writes a Wolfram notebook with:
+- the parts (multi-head attention, feed-forward, layer normalisation, embeddings, encoder and decoder), as in tensor-algebra-nets;
+- the net as a <code>NetGraph</code> of the drawing, with its input, output, target and loss ports;
+- a check of Wolfram's count against the drawing's;
+- a training cell for data of one's own, with the ports it expects.</p>
+<p>Python does not take sequence nets yet: our own Python code has no attention. The editor says so.</p>
+<p><strong>Tested</strong> (24 November 2026):</p>
+<table>
+<thead>
+<tr>
+<th>Net</th>
+<th>Learnt weights</th>
+<th>Wolfram's count</th>
+<th>The net built from its own definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>owNet</td>
+<td>59,722</td>
+<td>59,950 (with 228 fixed numbers)</td>
+<td>59,950</td>
+</tr>
+<tr>
+<td>tnParserNet</td>
+<td>1,422,870</td>
+<td>1,422,870</td>
+<td>1,422,870</td>
+</tr>
+<tr>
+<td>tnPolicyNet</td>
+<td>611,468</td>
+<td>611,468</td>
+<td>611,468</td>
+</tr>
+<tr>
+<td>tnValueNet</td>
+<td>626,819</td>
+<td>626,819</td>
+<td>626,819</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The generated nets:</strong> all four built in the Wolfram kernel with exactly these counts.</li>
+<li><strong>Training:</strong> the generated owNet trained for three rounds on a small copy task in 2 seconds, giving probabilities of the right shape.</li>
+<li><strong>The page:</strong> in headless Chrome, every example opens and editing changes the count correctly (a third decoder layer gives 76,714), with no errors in the console.</li>
+</ul>
+<h2>Wolfram or Python</h2>
+<p><strong>Language</strong>, at the top of the training settings, decides what Diagram → Code writes:</p>
+<ul>
+<li><strong>Wolfram:</strong> a notebook (<code>.nb</code>) with version A (our own code) and version B (<code>NetTrain</code>), as described below.</li>
+<li><strong>Python:</strong> a script (<code>.py</code>) that trains the net with our own code in <code>python/ccn_nets</code>, with no neural-net library. <strong>Download .py</strong> saves it.</li>
+<li><strong>Where to save it:</strong> in the repository's <code>python/</code> folder, or anywhere else with "Where the repository's python/ folder is" set to the path from the script's folder to <code>python/</code>.</li>
+<li><strong>Running it:</strong> <code>python3 &lt;name&gt;.py</code>, which needs only NumPy.</li>
+<li><strong>What the script contains:</strong> the drawing as JSON, the layer sizes and activations, the features hashed exactly as in SubjectNet, the data, training, and checks: weights in the drawing against the trained net, the test accuracy, the gradient check and the training time. With SubjectNet's data it also reports whether the input matches SubjectNet's, and the paragraph, hard-sentence and step-by-step results. The trained weights are saved beside the script as <code>&lt;name&gt;.npz</code>.</li>
+<li><strong>Your own data:</strong> write <code>my_data.py</code> beside the script, as the script's first lines describe.</li>
+<li><strong>Limits in this issue:</strong> Python takes nets drawn as a chain only; for a net that branches, the editor says to choose Wolfram. Dropout is left out of the Python version, as it is of version A.</li>
+</ul>
+<p>The choice is remembered with the drawing.</p>
+<p><strong>Tested:</strong> the script written for the SubjectNet example gives Python's SubjectNet results exactly. These are 65,634 weights, 99.5% on test 1, 47 of 47 paragraph parts, 21 of 24 hard sentences and 12 of 12 paragraphs step by step, and the input matches SubjectNet's. Two other drawings also trained:</p>
+<ul>
+<li>three features into 512 slots, 32 ReLU, dropout and 8 Tanh units: 16,698 weights;</li>
+<li>a plain vector of 20 into 6 Sigmoid units and three classes, on data of one's own: 147 weights.</li>
+</ul>
+<p>In the browser, switching the language changes the button, the settings shown and the code written, and is remembered after a reload. A branching net in Python is refused with a clear message.</p>
+<h2>The notebook it writes</h2>
+<p><strong>Download .nb</strong> saves a notebook of Code cells with these sections:</p>
+<ol>
+<li><strong>The diagram:</strong> the drawing and settings as JSON, so the drawing can be opened again in the editor, and <code>netSpec</code>, the net in plain terms.</li>
+<li><strong>Data:</strong></li>
+<li>SubjectNet's template data: the notebook evaluates <code>SubjectNet.nb</code> first, so save it beside that file or change the path in the settings.</li>
+<li>Your own data: you define the named variables first.
+   With Feature and Hash elements, the notebook also writes <code>diagramFeatures</code> and <code>diagramVector</code> for the features drawn.</li>
+<li><strong>Version B:</strong> the <code>NetChain</code> or <code>NetGraph</code>, its weight count, and <code>NetTrain</code> with the settings chosen.</li>
+<li><strong>Version A:</strong> the layer sizes and activations from the drawing, and our own forward pass, backpropagation, Adam and gradient check. This version covers chains only.</li>
+<li><strong>Checks:</strong></li>
+<li>weights in the drawing against weights in each trained net;</li>
+<li>training time;</li>
+<li>test accuracy;</li>
+<li>the gradient check;</li>
+<li>how often A and B agree.
+   With SubjectNet's data, the trained nets are also offered as subject checks for <code>MotionParse</code>.</li>
+</ol>
+<p>The training settings are epochs, batch size, learning rate (Adam), L2 and seed. The defaults are SubjectNet's: 12, 64, 0.005, 0.0001 and 1234.</p>
+<h2>Tested</h2>
+<ul>
+<li><strong>SubjectNet:</strong> the editor counts 65,634 weights, and Wolfram's <code>NetChain</code> has 65,634.</li>
+<li><strong>Version A against SubjectNet's own version A:</strong> with the same settings, the generated version A was trained in the Wolfram kernel beside SubjectNet's <code>trainA</code>, on the same data (300 vectors of 2,048, two epochs). The weights and the losses were identical, a difference of 0. The gradient check gave 3.9 × 10⁻¹².</li>
+<li><strong>The hashing:</strong> the generated <code>diagramVector</code> equals SubjectNet's <code>featureVector</code> on 400 records, 101 of them with no words of their own.</li>
+<li><strong>A deeper chain</strong> (20 → 6 Tanh → 5 Sigmoid → 4 linear → 3 classes) trained in both versions. Both count 200 weights, and the gradient check gave 1.3 × 10⁻¹¹.</li>
+<li><strong>A branching net</strong> (two layers side by side, joined, dropout, softmax) was written as a <code>NetGraph</code> and trained. It has 2,499 weights, as the editor counted.</li>
+<li><strong>The page</strong> was run in headless Chrome:</li>
+<li>drawing, editing units, adding and wiring a layer, undo, Example, Download .nb and Export SVG all work, with no errors in the console;</li>
+<li>every cell of the downloaded notebook parses, and the file is ASCII, with other characters written as <code>\:xxxx</code>.</li>
+</ul>
+<h2>Not yet</h2>
+<ul>
+<li>Version A for nets that branch, and dropout in version A.</li>
+<li>ONNX between the two languages, as draft 8 describes.</li>
+<li>Branching nets and dropout in the Python version, and sequence nets (attention) in our own Python code.</li>
+<li><strong>Code → Diagram:</strong> drawing a net from its code or from the trained net itself, such as owNet in <code>unit4_build_your_own_nets.nb</code>.</li>
+</ul>
+<p>By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
+AI System Programming Group</p>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p></main><footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>

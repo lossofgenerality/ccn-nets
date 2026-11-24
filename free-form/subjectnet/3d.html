@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A net in 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clinical and calm, an instrument for looking inside a trained net.
+   IDEA: an atlas plate seen from the air: the weights are a landscape you fly over.
+   PICTURE: the 3D net itself, the inputs × hidden weight field, then the layers in a row, filling the first screen.
+   COLOUR and TYPE: deep sea ground, sky for the interface, coral and blue for the signs of numbers; Hanken Grotesk.
+   LAYOUT: modest title, the scene large, a side panel of controls and a numbered reading guide; stacked below 900px. */
+:root{color-scheme:dark;--bg:#0a2540;--deep:#071b30;--ink:#f2f7fb;--soft:#a9c3da;--sky:#8fd3ff;--pink:#ff5c8a;--pos:#ff6b57;--neg:#4ea1ff;--line:rgba(143,211,255,.18)}
+:root[data-theme=light],:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+header{padding:22px max(3vw,16px) 10px}
+h1{font-weight:300;font-size:clamp(30px,4vw,48px);line-height:1.05;margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--soft);margin:0;max-width:70ch}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.fig{position:relative;min-height:560px;height:72vh;background:var(--deep)}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#tip{position:absolute;pointer-events:none;background:rgba(7,27,48,.92);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:13px;color:var(--ink);display:none;max-width:280px;z-index:2}
+#stageName{position:absolute;left:16px;top:14px;font-size:13px;color:var(--sky);background:rgba(7,27,48,.75);padding:4px 10px;border-radius:20px;border:1px solid var(--line)}
+#fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;color:var(--soft)}
+aside{padding:18px 18px 22px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+label{font-size:13px;color:var(--soft);display:block;margin-bottom:4px}
+select,button,input[type=range]{font:inherit;font-size:16px}
+select{width:100%;min-height:44px;background:var(--deep);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+button{min-height:44px;border-radius:6px;border:1px solid var(--line);background:var(--deep);color:var(--ink);cursor:pointer;padding:6px 12px}
+button:hover{border-color:var(--sky)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+#glide{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:600;width:100%}
+.stages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.stages button{font-size:14px;text-align:left}
+.stages button.on{border-color:var(--sky);color:var(--sky)}
+.result{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:60px minmax(0,1fr) 64px;align-items:center;gap:8px;font-size:14px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--sky)}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.verdict{font-size:14px;color:var(--soft)}
+#explain{font-size:15px;color:var(--ink);background:rgba(143,211,255,.06);border-radius:6px;padding:10px 12px;min-height:96px}
+.band{padding:clamp(24px,3vw,44px) max(3vw,16px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.band h2{font-weight:600;font-size:20px;margin:0 0 8px}
+.band ol{margin:0;padding-left:1.3em;color:var(--soft)}
+.band ol b{color:var(--ink);font-weight:600}
+.key{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--soft);margin-top:10px}
+.key span::before{border:1px solid rgba(255,255,255,.25);content:"";display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+footer{padding:14px max(3vw,16px) 24px;font-size:13px;color:var(--soft)}
+@media(max-width:900px){.main{grid-template-columns:minmax(0,1fr)}aside{border-left:0;border-top:1px solid var(--line)}.fig{height:62vh;min-height:420px}.band{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>{TITLE}</h1>
+  <p class="sub">The trained net in 3D. The long field is W₁ᵀ, {H} hidden units by {N} input slots; the {INPUT} lights a handful of its columns, and their sum flows through ReLU, W₂ and softmax to the answer. Drag to orbit, scroll to zoom, or press Glide.</p>
+</header>
+<div class="main">
+  <div class="fig" id="fig">
+    <canvas id="c" aria-label="3D view of the net's weights and layers"></canvas>
+    <div id="stageName">Overview</div>
+    <div id="tip"></div>
+    <div id="fallback">This view needs WebGL, which this browser has turned off.</div>
+  </div>
+  <aside>
+    <div>
+      <label for="sent">{INPUTCAP}</label>
+      <select id="sent"></select>
+    </div>
+    <div class="result" id="result"></div>
+    <button id="glide" type="button">Glide through the net</button>
+    <button id="scene" type="button">Dark scene</button>
+    <div>
+      <label for="speed">Glide speed</label>
+      <input id="speed" type="range" min="0.4" max="2.5" step="0.1" value="1" style="width:100%">
+    </div>
+    <div class="stages" id="stages"></div>
+    <div id="explain"></div>
+  </aside>
+</div>
+<section class="band">
+  <div>
+    <h2>How to read it</h2>
+    <ol>
+      <li><b>Input x.</b> The strip on the left has {N} slots. Each feature of the {INPUT} is hashed to one slot, which becomes 1; every other slot is 0.</li>
+      <li><b>W₁ᵀ.</b> The long field: one row of {N} weights for each of the {H} hidden units. Height and colour show each weight. Only the columns of the lit slots take part; the rest are dimmed. The weights themselves are fixed after training and are the same for every {INPUT}: a new {INPUT} lights different columns, it does not change the matrix.</li>
+      <li><b>Σ = W₁ᵀx.</b> The streams carry the lit columns forward, and they are added up: 32 numbers.</li>
+      <li><b>+ b₁ = z₁.</b> The bias row is added. It is fixed, so it looks the same for every {INPUT}; every row is drawn to one scale for all of them.</li>
+      <li><b>σ = ReLU.</b> Negative entries become 0 (shown flat and grey). This bend is what makes a net more than one matrix.</li>
+      <li><b>× W₂, then Σ + b₂ = z₂.</b> Each survivor is multiplied by its two weights, for "{C0}" and "{C1}", and each column is added up.</li>
+      <li><b>softmax → p.</b> The two numbers become probabilities that add up to 1.</li>
+    </ol>
+  </div>
+  <div>
+    <h2>What to look for</h2>
+    <ol>
+      {LOOKFOR}
+    </ol>
+    <div class="key"><span style="--c:#d63a2a">positive</span><span style="--c:#1f63d0">negative</span><span style="--c:#9aa9ba">near zero</span><span style="--c:#6f7d8f">switched off by ReLU</span></div>
+  </div>
+</section>
+<footer>{CREDIT} Hover over any block for its value. · © Computational Classnotes · CC BY-NC-SA 4.0</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+{
+const $ = id => document.getElementById(id);
+let N = 2048, H = 32; const dz = 0.06, dx = 0.36, K = 10;
+const X = i => (i - 15.5) * dx, Zc = j => j * dz;
+let ZS = N * dz + 5;                       // where the sum row sits
+const PAL = {
+  light: {pos: '#d63a2a', neg: '#1f63d0', zero: '#9aa9ba', off: '#6f7d8f', bg: '#c4cfda', sky: '#1478c4', white: '#10253d', dim: .45, grid: [0x93a3b4, 0xadbac8], fog: [90, 260], heaven: '#13304f'},
+  dark:  {pos: '#ff7d68', neg: '#5fb2ff', zero: '#46668c', off: '#93a0b0', bg: '#0f3155', sky: '#8fd3ff', white: '#f2f7fb', dim: .45, grid: [0x2f5d8c, 0x214a73], fog: [80, 260], heaven: '#06152a'}};
+let mode = 'light'; try { mode = localStorage.getItem('ccn-net3d-scene') || 'light'; } catch (e) {}
+const C = {}; for (const k of ['pos', 'neg', 'zero', 'off', 'bg', 'sky', 'white']) C[k] = new THREE.Color();
+const tmp = new THREE.Object3D(), col = new THREE.Color();
+const shade = (t, dim) => { col.copy(C.zero).lerp(t >= 0 ? C.pos : C.neg, Math.min(1, Math.abs(t)) ** 0.6); if (dim) col.lerp(C.bg, dim * PAL[mode].dim / .6); return col; };
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let D, W1T, sent, state = {};
+const canvas = $('c'), fig = $('fig');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({canvas, antialias: true}); } catch (e) { $('fallback').style.display = 'grid'; }
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(); scene.fog = new THREE.Fog(0xffffff, 80, 260);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
+scene.add(new THREE.AmbientLight(0xffffff, 0.42)); scene.add(new THREE.HemisphereLight(0xffffff, 0x556677, 0.38));
+const sun = new THREE.DirectionalLight(0xffffff, 0.85); sun.position.set(20, 40, -10); scene.add(sun);
+let grid = null;
+// The floor is zero: a faintly see-through plane, so negative bars hang visibly below it
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({transparent: true, opacity: .62, depthWrite: false, side: THREE.DoubleSide}));
+floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, ZS / 2 + 10); floor.renderOrder = 1; scene.add(floor);
+const zeroLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({transparent: true, opacity: .9}));
+scene.add(zeroLines);
+function palette(m) {
+  mode = m; const P = PAL[m]; for (const k in C) C[k].set(P[k]);
+  scene.background.set(P.heaven); scene.fog.color.set(P.bg); scene.fog.near = P.fog[0]; scene.fog.far = P.fog[1];
+  floor.material.color.set(P.bg); zeroLines.material.color.set(m === 'light' ? '#10253d' : '#cfe6ff');
+  if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+  grid = new THREE.GridHelper(400, 200, P.grid[0], P.grid[1]); grid.position.set(0, 0.003, ZS / 2 + 10); scene.add(grid);
+  fig.style.background = P.heaven; try { localStorage.setItem('ccn-net3d-scene', m); } catch (e) {}
+}
+palette(mode);
+
+const controls = renderer ? new THREE.OrbitControls(camera, canvas) : null;
+if (controls) { controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.49; }
+
+// ---------- Labels ----------
+const labels = [];
+function label(text, size = 0.9, color = '#f2f7fb', sub = '', anchor = [0, 0], always = false) {
+  const c = document.createElement('canvas'), g = c.getContext('2d'), px = 64;
+  g.font = `600 ${px}px Hanken Grotesk, sans-serif`;
+  const w1 = g.measureText(text).width; g.font = `400 ${px * 0.62}px Hanken Grotesk, sans-serif`;
+  const w2 = sub ? g.measureText(sub).width : 0;
+  c.width = Math.ceil(Math.max(w1, w2) + 40); c.height = sub ? px * 2 : px * 1.4;
+  g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.roundRect ? g.roundRect(2, 2, c.width - 4, c.height - 4, 22) : g.rect(2, 2, c.width - 4, c.height - 4); g.fill();
+  const ink = color === '#8fd3ff' ? '#0b5a9a' : '#10253d';
+  g.font = `600 ${px}px Hanken Grotesk, sans-serif`; g.fillStyle = ink; g.textBaseline = 'top'; g.fillText(text, 20, 10);
+  if (sub) { g.font = `400 ${px * 0.62}px Hanken Grotesk, sans-serif`; g.fillStyle = '#3d5168'; g.fillText(sub, 20, px * 1.22); }
+  const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map: tex, depthWrite: false, depthTest: false, transparent: true, sizeAttenuation: false}));
+  const k = 0.026 * size; s.scale.set(k * c.width / px, k * c.height / px, 1); s.center.set(...anchor); s.renderOrder = 10;
+  s.userData.always = always; labels.push(s); return s;
+}
+const swap = (old, neu) => { if (old) { scene.remove(old); labels.splice(labels.indexOf(old), 1); old.material.map.dispose(); old.material.dispose(); } scene.add(neu); return neu; };
+
+// ---------- Rows of 32 bars ----------
+const hoverables = [];
+function row(z, n, w, depth, describe) {
+  const m = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({roughness: .65}), n);
+  m.userData = {z, n, w, depth, describe, vals: new Array(n).fill(0)}; scene.add(m); hoverables.push(m); return m;
+}
+function setRow(m, vals, scale, xs, offMask) {
+  m.userData.vals = vals;
+  vals.forEach((v, i) => {
+    const off = offMask && offMask[i], h = off ? 0.03 : Math.max(0.03, Math.abs(v) * scale);
+    tmp.position.set(xs(i), off ? 0.015 : Math.sign(v || 1) * h / 2, m.userData.z); tmp.scale.set(m.userData.w, h, m.userData.depth); tmp.updateMatrix();
+    m.setMatrixAt(i, tmp.matrix); m.setColorAt(i, off ? C.off : shade(v / (1 / scale * 3)));
+  });
+  m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true;
+}
+
+function build() {
+  // W1T field
+  const field = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({roughness: .7}), N * H);
+  for (let i = 0; i < H; i++) for (let j = 0; j < N; j++) {
+    const w = W1T[i * N + j], h = Math.max(0.006, Math.abs(w) * K);
+    tmp.position.set(X(i), Math.sign(w || 1) * h / 2, Zc(j)); tmp.scale.set(dx * 0.78, h, dz * 0.72); tmp.updateMatrix();
+    field.setMatrixAt(i * N + j, tmp.matrix); field.setColorAt(i * N + j, shade(w / 0.3, 0.7));
+  }
+  field.userData.describe = id => { const i = Math.floor(id / N), j = id % N, f = state.slotName[j];
+    return `W₁ᵀ, hidden unit ${i + 1}, input slot ${j}${f ? ` (${f})` : ''}: ${(W1T[id]).toFixed(3)}`; };
+  scene.add(field); hoverables.push(field); state.field = field;
+  // input strip
+  const inp = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({roughness: .5}), N);
+  inp.userData.describe = j => `Input slot ${j}: ${state.active.has(j) ? '1 (' + state.slotName[j] + ')' : '0'}`;
+  scene.add(inp); hoverables.push(inp); state.inp = inp;
+  // rows after the field
+  const xs = i => X(i), xs2 = (i, k) => X(i);
+  state.rows = {
+    h: row(ZS, H, dx * .8, .5, i => `W₁ᵀx, unit ${i + 1}: ${state.h[i].toFixed(3)} (the sum of the lit columns)`),
+    b1: row(ZS + 3, H, dx * .8, .5, i => `b₁, unit ${i + 1}: ${D.b1[i].toFixed(3)}`),
+    z1: row(ZS + 6, H, dx * .8, .5, i => `z₁ = W₁ᵀx + b₁, unit ${i + 1}: ${state.z1[i].toFixed(3)}`),
+    a1: row(ZS + 10, H, dx * .8, .5, i => state.z1[i] < 0 ? `a₁, unit ${i + 1}: 0 (z₁ was ${state.z1[i].toFixed(3)}; ReLU switched it off)` : `a₁ = ReLU(z₁), unit ${i + 1}: ${state.a1[i].toFixed(3)}`),
+    w2o: row(ZS + 14.5, H, dx * .8, .45, i => `W₂, unit ${i + 1} → ${D.classes[0]}: ${D.W2[i][0].toFixed(3)}`),
+    w2t: row(ZS + 15.3, H, dx * .8, .45, i => `W₂, unit ${i + 1} → ${D.classes[1]}: ${D.W2[i][1].toFixed(3)}`),
+    po: row(ZS + 19.5, H, dx * .8, .45, i => `a₁ × W₂, unit ${i + 1}, ${D.classes[0]}: ${state.prod[i][0].toFixed(3)}`),
+    pt: row(ZS + 20.3, H, dx * .8, .45, i => `a₁ × W₂, unit ${i + 1}, ${D.classes[1]}: ${state.prod[i][1].toFixed(3)}`),
+    z2: row(ZS + 25, 2, 1.4, .9, k => `z₂, ${D.classes[k]}: ${state.z2[k].toFixed(3)}`),
+    p: row(ZS + 30, 2, 1.6, 1.1, k => `p, ${D.classes[k]}: ${(100 * state.p[k]).toFixed(2)}%`)
+  };
+  setRow(state.rows.w2o, D.W2.map(r => r[0]), 4, xs); setRow(state.rows.w2t, D.W2.map(r => r[1]), 4, xs);
+  // fixed labels on the right of each row
+  const R = X(31) + 1.2, put = (s, x, y, z) => { s.position.set(x, y, z); scene.add(s); };
+  put(label('W₁ᵀ', .8, '#8fd3ff', `${(N * H).toLocaleString('en-GB')} fixed weights`, [0, 0], true), R + 0.4, 1.2, -1);
+  put(label('x', .8, '#8fd3ff', `${N} slots, lit ones = 1`, [1, 0], true), X(0) - 2.4, 1.0, -2);
+  [['Σ  W₁ᵀx', 'the lit columns, added up', ZS], ['+ b₁', 'bias', ZS + 3], ['= z₁', '', ZS + 6],
+   ['σ = ReLU → a₁', 'negatives become 0', ZS + 10], ['× W₂', `${D.classes[0]} (front), ${D.classes[1]} (back)`, ZS + 14.9],
+   ['= a₁ × W₂', 'then each row is added up', ZS + 19.9]].forEach(([t, s, z]) => put(label(t, .8, '#f2f7fb', s), R, .3, z));
+  put(label('Σ + b₂ = z₂', .8, '#f2f7fb'), -3, .3, ZS + 25); put(label('softmax → p', .9, '#8fd3ff'), -3, .3, ZS + 30);
+  { const a = X(0) - .25, b = X(31) + .25, y = .006, z0 = -.2, z1 = Zc(N - 1) + .2, pts = [a, y, z0, b, y, z0, b, y, z0, b, y, z1, b, y, z1, a, y, z1, a, y, z1, a, y, z0];
+    for (const z of [ZS, ZS + 3, ZS + 6, ZS + 10, ZS + 14.5, ZS + 15.3, ZS + 19.5, ZS + 20.3]) pts.push(a, y, z, b, y, z);
+    for (const z of [ZS + 25, ZS + 30]) pts.push(-2.2, y, z, 2.2, y, z);
+    zeroLines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); }
+  state.flows = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({vertexColors: true, transparent: true, opacity: .45}));
+  scene.add(state.flows);
+}
+
+// ---------- One sentence through the net ----------
+function forward(st) {
+  const slots = [...new Set(st.slots)], h = new Array(H).fill(0);
+  for (let i = 0; i < H; i++) for (const j of slots) h[i] += W1T[i * N + j];
+  const z1 = h.map((v, i) => v + D.b1[i]), a1 = z1.map(v => Math.max(0, v));
+  const prod = a1.map((a, i) => [a * D.W2[i][0], a * D.W2[i][1]]);
+  const z2 = [0, 1].map(c => prod.reduce((s, r) => s + r[c], 0) + D.b2[c]);
+  const m = Math.max(...z2), e = z2.map(v => Math.exp(v - m)), p = e.map(v => v / (e[0] + e[1]));
+  return {slots, h, z1, a1, prod, z2, p};
+}
+// One scale for every sentence, so that what is fixed (b1, W2) looks the same whichever sentence is chosen
+const SC = {};
+function scales() {
+  const all = D.sentences.map(forward), mx = a => Math.max(1e-9, ...a.map(Math.abs));
+  SC.v = 3 / mx([...D.b1, ...all.flatMap(r => [...r.h, ...r.z1])]);
+  SC.p = 2.5 / mx(all.flatMap(r => r.prod.flat()));
+  SC.z2 = 3 / mx(all.flatMap(r => r.z2));
+}
+function run(k) {
+  sent = D.sentences[k];
+  const {slots, h, z1, a1, prod, z2, p} = forward(sent);
+  state.active = new Set(slots); state.slotName = {};
+  sent.slots.forEach((s, i) => state.slotName[s] = (state.slotName[s] ? state.slotName[s] + ', ' : '') + sent.features[i]);
+  Object.assign(state, {h, z1, a1, prod, z2, p});
+  // field: light the active columns, dim the rest
+  const f = state.field;
+  for (let i = 0; i < H; i++) for (let j = 0; j < N; j++) f.setColorAt(i * N + j, shade(W1T[i * N + j] / 0.3, state.active.has(j) ? 0 : 0.6));
+  f.instanceColor.needsUpdate = true;
+  // input strip
+  for (let j = 0; j < N; j++) { const on = state.active.has(j), hh = on ? 0.9 : 0.02;
+    tmp.position.set(X(0) - 1.4, hh / 2, Zc(j)); tmp.scale.set(on ? .5 : .3, hh, on ? dz * 3 : dz * .72); tmp.updateMatrix();
+    state.inp.setMatrixAt(j, tmp.matrix); state.inp.setColorAt(j, on ? C.sky : C.zero); }
+  state.inp.instanceMatrix.needsUpdate = true; state.inp.instanceColor.needsUpdate = true;
+  (state.featLabels || []).forEach(s => { scene.remove(s); labels.splice(labels.indexOf(s), 1); });
+  state.featLabels = slots.map(j => { const s = label(state.slotName[j], .6, '#f2f7fb', '', [1, 0.5], true); s.position.set(X(0) - 2, .5, Zc(j)); scene.add(s); return s; });
+  // the streams: from every lit weight to the sum row
+  const pos = [], cols = [];
+  for (const j of slots) for (let i = 0; i < H; i++) { const w = W1T[i * N + j], c = shade(w / 0.3);
+    pos.push(X(i), Math.abs(w) * K * Math.sign(w || 1), Zc(j), X(i), 0.05, ZS - .3); cols.push(c.r, c.g, c.b, c.r * .6, c.g * .6, c.b * .6); }
+  state.flows.geometry.dispose(); const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  state.flows.geometry = g;
+  // the rows
+  const s1 = SC.v;
+  const R = state.rows, off = z1.map(v => v < 0);
+  setRow(R.h, h, s1, X); setRow(R.b1, D.b1, s1, X); setRow(R.z1, z1, s1, X); setRow(R.a1, a1, s1, X, off);
+  const sp = SC.p;
+  setRow(R.po, prod.map(r => r[0]), sp, X); setRow(R.pt, prod.map(r => r[1]), sp, X);
+  const xz = k => (k ? 1.1 : -1.1);
+  setRow(R.z2, z2, SC.z2, xz);
+  R.p.userData.vals = p; p.forEach((v, k) => { const hh = Math.max(.03, v * 7);
+    tmp.position.set(xz(k), hh / 2, R.p.userData.z); tmp.scale.set(1.6, hh, 1.1); tmp.updateMatrix(); R.p.setMatrixAt(k, tmp.matrix); R.p.setColorAt(k, k === (p[0] > p[1] ? 0 : 1) ? C.sky : C.off); });
+  R.p.instanceMatrix.needsUpdate = true; R.p.instanceColor.needsUpdate = true;
+  state.pl = [0, 1].map(k => swap(state.pl && state.pl[k], (() => { const s = label(`${D.classes[k]} ${(100 * p[k]).toFixed(2)}%`, .75, k === (p[0] > p[1] ? 0 : 1) ? '#8fd3ff' : '#a9c3da', '', [.5, 0]);
+    s.position.set(xz(k), Math.max(.03, p[k] * 7) + .3, ZS + 30); return s; })()));
+  state.zl = [0, 1].map(k => swap(state.zl && state.zl[k], (() => { const s = label(`${D.classes[k]} ${z2[k].toFixed(2)}`, .6, '#f2f7fb', '', [.5, 0]);
+    s.position.set(xz(k), Math.max(0, z2[k] * SC.z2) + .3, ZS + 25); return s; })()));
+  // panel
+  const best = p[0] > p[1] ? 0 : 1, right = D.classes[best] === sent.label;
+  $('result').innerHTML = D.classes.map((c, k) => `<div class="bar"><span>${c}</span><i style="width:${(100 * p[k]).toFixed(1)}%;${k === best ? '' : 'background:#6b7a90'}"></i><span>${(100 * p[k]).toFixed(2)}%</span></div>`).join('')
+    + `<div class="verdict">${off.filter(Boolean).length} of 32 units switched off by ReLU · ${slots.length} features lit · ${right ? 'the net is right' : 'the net is <b>wrong</b>: it should be ' + sent.label}</div>`;
+}
+
+// ---------- Camera stages and the glide ----------
+const S = () => [
+  {name: 'Overview', pos: [34, 30, -18], tgt: [0, 0, ZS / 2 + 4], text: `The whole net. The long field is W₁ᵀ: ${(N * H).toLocaleString('en-GB')} weights. The rows beyond it are the layers that follow. The weights (W₁, b₁, W₂, b₂) are the same for every ${D.input_noun}; only the lit columns and the activity after them change.`},
+  {name: 'Input x', pos: [-15, 6, -8], tgt: [-5, 0, 24], text: `The input strip: ${N} slots, each 0 or 1. The ${D.input_noun} lights one slot per feature; the labels name them.`},
+  {name: 'W₁ᵀ field', pos: [13, 7, 20], tgt: [0, 0, 48], text: 'Each lit slot picks out one column across the field: 32 weights, one per hidden unit. Dimmed columns are multiplied by 0 and play no part.'},
+  {name: 'Σ → W₁ᵀx', pos: [11, 6.5, ZS - 10], tgt: [0, 0, ZS + 3], text: 'The streams carry the lit columns forward, and they are added unit by unit: W₁ᵀx. Then the bias b₁ is added, giving z₁.'},
+  {name: 'ReLU', pos: [11, 6.5, ZS + 2], tgt: [0, 0, ZS + 10], text: 'σ = ReLU keeps positive entries and turns negative ones into 0 (flat and grey). This bend is what makes the net more than one matrix.'},
+  {name: 'W₂', pos: [10.5, 6.5, ZS + 8.5], tgt: [0, 0, ZS + 18], text: `Each surviving unit is multiplied by its two weights in W₂, for ${D.classes[0]} (front row) and ${D.classes[1]} (back row). Then each row is added up and b₂ is added.`},
+  {name: 'softmax → p', pos: [11, 8.5, ZS + 16], tgt: [0, 2, ZS + 28], text: 'softmax turns the two sums z₂ into probabilities that add up to 1. The taller bar is the net’s answer.'}];
+let stages, tween = null, gliding = false;
+const glidePath = () => [1, {name: 'W₁ᵀ field', pos: [9, 5, 2], tgt: [0, 0, 30], text: S()[2].text}, {name: 'W₁ᵀ field', pos: [9, 5, 50], tgt: [0, 0, 82], text: S()[2].text}, {name: 'W₁ᵀ field', pos: [9, 5, 96], tgt: [0, 0, ZS], text: S()[2].text}, 3, 4, 5, 6].map(s => typeof s === 'number' ? stages[s] : s);
+function show(st) { $('stageName').textContent = st.name; $('explain').textContent = st.text;
+  document.querySelectorAll('.stages button').forEach(b => b.classList.toggle('on', b.textContent.endsWith(st.name))); }
+function fly(st, secs, done) {
+  show(st);
+  const from = {p: camera.position.clone(), t: controls.target.clone()}, to = {p: new THREE.Vector3(...st.pos), t: new THREE.Vector3(...st.tgt)};
+  if (reduced || secs <= 0) { camera.position.copy(to.p); controls.target.copy(to.t); done && done(); return; }
+  tween = {from, to, t0: performance.now(), ms: secs * 1000, done};
+}
+function glide() {
+  if (gliding) { gliding = false; tween = null; $('glide').textContent = 'Glide through the net'; return; }
+  gliding = true; $('glide').textContent = 'Stop'; const path = glidePath(); let k = 0;
+  const next = () => { if (!gliding) return; if (k >= path.length) { gliding = false; $('glide').textContent = 'Glide again'; return; }
+    fly(path[k++], 3.2 / +$('speed').value, () => setTimeout(next, 500 / +$('speed').value)); };
+  next();
+}
+
+// ---------- Hover ----------
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+canvas.addEventListener('pointermove', e => {
+  const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ptr, camera); const hit = ray.intersectObjects(hoverables, false)[0], tip = $('tip');
+  if (hit && hit.instanceId != null && hit.object.userData.describe) {
+    tip.textContent = hit.object.userData.describe(hit.instanceId); tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX - r.left + 14, r.width - 290) + 'px'; tip.style.top = (e.clientY - r.top + 14) + 'px';
+  } else tip.style.display = 'none';
+});
+canvas.addEventListener('pointerleave', () => $('tip').style.display = 'none');
+canvas.addEventListener('pointerdown', () => { if (gliding) glide(); tween = null; });
+
+// ---------- Resize and draw ----------
+function size() { const w = fig.clientWidth, h = fig.clientHeight; renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+const ease = t => t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+function frame(now) {
+  if (tween) { const t = Math.min(1, (now - tween.t0) / tween.ms), e = ease(t);
+    camera.position.lerpVectors(tween.from.p, tween.to.p, e); controls.target.lerpVectors(tween.from.t, tween.to.t, e);
+    if (t >= 1) { const d = tween.done; tween = null; d && d(); } }
+  for (const s of labels) { const d = s.position.distanceTo(camera.position); s.material.opacity = s.userData.always ? 1 : Math.max(0, Math.min(1, (34 - d) / 10)); s.visible = s.material.opacity > 0.02; }
+  controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame);
+}
+
+
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+function fillText() {
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  const look = (D.look_for || []).map(t => `<li>${esc(t)}</li>`).join('');
+  const sub = {TITLE: esc(D.title || D.name), N: N, H: H, INPUT: esc(D.input_noun || 'input'), INPUTCAP: esc(cap(D.input_noun || 'input')),
+    C0: esc(D.classes[0]), C1: esc(D.classes[1]), LOOKFOR: look, CREDIT: esc(D.credit || '')};
+  for (const el of [document.querySelector('header'), document.querySelector('label[for=sent]'), document.querySelector('.band'), document.querySelector('footer')])
+    el.innerHTML = el.innerHTML.replace(/\{([A-Z0-9]+)\}/g, (m, k) => k in sub ? sub[k] : m);
+  document.title = `${D.name} in 3D`;
+}
+// ---------- Start ----------
+async function start() {
+  if (!renderer) return;
+  const inline = document.getElementById('net-data');
+  D = inline ? JSON.parse(inline.textContent) : await (await fetch('data.json')).json();
+  N = D.dim; H = D.hidden; ZS = N * dz + 5; palette(mode); floor.position.z = ZS / 2 + 10; fillText();
+  const raw = atob(D.W1T_int16_x1000); W1T = new Float32Array(N * H);
+  for (let k = 0; k < N * H; k++) { let v = raw.charCodeAt(2 * k) | (raw.charCodeAt(2 * k + 1) << 8); if (v > 32767) v -= 65536; W1T[k] = v / 1000; }
+  stages = S(); build(); scales();
+  $('sent').innerHTML = D.sentences.map((s, k) => { const o = document.createElement('option'); o.value = k; o.textContent = `${s.text}  (${s.label})`; return o.outerHTML; }).join('');
+  $('stages').innerHTML = stages.map((s, k) => `<button type="button" data-k="${k}">${k + 1}. ${s.name}</button>`).join('');
+  $('stages').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (gliding) glide(); fly(stages[+b.dataset.k], 1.4); });
+  $('sent').addEventListener('change', e => run(+e.target.value));
+  const sceneBtn = () => $('scene').textContent = mode === 'light' ? 'Dark scene' : 'Light scene';
+  $('scene').addEventListener('click', () => { palette(mode === 'light' ? 'dark' : 'light'); sceneBtn();
+    setRow(state.rows.w2o, D.W2.map(r => r[0]), 4, X); setRow(state.rows.w2t, D.W2.map(r => r[1]), 4, X); run(+$('sent').value); });
+  sceneBtn();
+  $('glide').addEventListener('click', glide);
+  new ResizeObserver(size).observe(fig); size();
+  run(0); fly(stages[0], 0); requestAnimationFrame(frame);
+  window.__ready = true;
+}
+start().catch(err => { $('fallback').textContent = 'The net could not be loaded: ' + err.message; $('fallback').style.display = 'grid'; });
+}
+</script>
+</body>
+</html>

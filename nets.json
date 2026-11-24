@@ -1,0 +1,12 @@
+[
+ {
+  "project": "free-form",
+  "name": "SubjectNet",
+  "path": "free-form/subjectnet",
+  "purpose": "Decides whether a motion part of a sentence is about the object being moved (\"the drone should rise 4 metres\") or about something else (\"Mia turned to her brother\"), so that the motion reader keeps only the right parts.",
+  "numbers": 65634,
+  "status": "trained",
+  "run": "2026-11-24-seed1234",
+  "source": "lossofgenerality/ccn-agent-free-form-language@3de273e"
+ }
+]

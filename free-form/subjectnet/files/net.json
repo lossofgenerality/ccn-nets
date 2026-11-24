@@ -1,0 +1,159 @@
+{
+ "nodes": [
+  {
+   "id": "f0",
+   "kind": "feature",
+   "key": "Own",
+   "x": 100,
+   "y": 60
+  },
+  {
+   "id": "f1",
+   "kind": "feature",
+   "key": "Verb",
+   "x": 100,
+   "y": 104
+  },
+  {
+   "id": "f2",
+   "kind": "feature",
+   "key": "After",
+   "x": 100,
+   "y": 148
+  },
+  {
+   "id": "f3",
+   "kind": "feature",
+   "key": "Prev",
+   "x": 100,
+   "y": 192
+  },
+  {
+   "id": "f4",
+   "kind": "feature",
+   "key": "Join",
+   "x": 100,
+   "y": 236
+  },
+  {
+   "id": "h",
+   "kind": "hash",
+   "nIn": 5,
+   "slots": 2048,
+   "x": 240,
+   "y": 148
+  },
+  {
+   "id": "s",
+   "kind": "slots",
+   "size": 2048,
+   "x": 330,
+   "y": 148
+  },
+  {
+   "id": "d",
+   "kind": "dense",
+   "units": 32,
+   "act": "ReLU",
+   "x": 470,
+   "y": 148
+  },
+  {
+   "id": "o",
+   "kind": "softmax",
+   "classes": "object, other",
+   "x": 610,
+   "y": 148
+  }
+ ],
+ "wires": [
+  {
+   "id": "w0",
+   "from": {
+    "node": "f0",
+    "port": 0
+   },
+   "to": {
+    "node": "h",
+    "port": 0
+   }
+  },
+  {
+   "id": "w1",
+   "from": {
+    "node": "f1",
+    "port": 0
+   },
+   "to": {
+    "node": "h",
+    "port": 1
+   }
+  },
+  {
+   "id": "w2",
+   "from": {
+    "node": "f2",
+    "port": 0
+   },
+   "to": {
+    "node": "h",
+    "port": 2
+   }
+  },
+  {
+   "id": "w3",
+   "from": {
+    "node": "f3",
+    "port": 0
+   },
+   "to": {
+    "node": "h",
+    "port": 3
+   }
+  },
+  {
+   "id": "w4",
+   "from": {
+    "node": "f4",
+    "port": 0
+   },
+   "to": {
+    "node": "h",
+    "port": 4
+   }
+  },
+  {
+   "id": "w5",
+   "from": {
+    "node": "h",
+    "port": 0
+   },
+   "to": {
+    "node": "s",
+    "port": 0
+   }
+  },
+  {
+   "id": "w6",
+   "from": {
+    "node": "s",
+    "port": 0
+   },
+   "to": {
+    "node": "d",
+    "port": 0
+   }
+  },
+  {
+   "id": "w7",
+   "from": {
+    "node": "d",
+    "port": 0
+   },
+   "to": {
+    "node": "o",
+    "port": 0
+   }
+  }
+ ]
+}

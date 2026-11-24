@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubjectNet · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+</style></head><body>
+<header class="top">
+<p class="crumb"><a href="../../">CCN Nets</a> · CCN agent free-form language</p>
+<h1>SubjectNet</h1>
+<p class="lede">Decides whether a motion part of a sentence is about the object being moved (&quot;the drone should rise 4 metres&quot;) or about something else (&quot;Mia turned to her brother&quot;), so that the motion reader keeps only the right parts.</p>
+<div class="stats"><div class="stat"><b>65,634</b><span>numbers in the net</span></div><div class="stat"><b>99.5%</b><span>templates with unseen words, accuracy</span></div><div class="stat"><b>21 of 24</b><span>hard sentences, accuracy</span></div><div class="stat"><b>12 of 12 (without the check: 9)</b><span>paragraphs right step by step</span></div><div class="stat"><b>0.75 s</b><span>training on a CPU</span></div></div>
+<div class="actions"><a class="btn" href="3d.html">Fly through it in 3D</a><a class="btn alt" href="../../editor/net-diagram-editor.html?example=subjectnet">Open its diagram</a><a class="btn alt" href="#downloads">Downloads</a></div>
+</header>
+<main class="band">
+<div class="two">
+<section class="panel"><h2>Structure</h2><p>five feature groups hashed into 2048 slots of 0 or 1 → 32 hidden units (ReLU) → softmax over object and other.</p><h2>Training</h2><div class="fig"><svg viewBox="0 0 560 220" role="img" aria-label="Loss after each epoch"><line x1="52" x2="548" y1="186" y2="186" stroke="#e3e9ef"/><text x="44" y="190" text-anchor="end" font-size="12" fill="#4b5f75">0.0000</text><line x1="52" x2="548" y1="100.0" y2="100.0" stroke="#e3e9ef"/><text x="44" y="104.0" text-anchor="end" font-size="12" fill="#4b5f75">0.0048</text><line x1="52" x2="548" y1="14" y2="14" stroke="#e3e9ef"/><text x="44" y="18" text-anchor="end" font-size="12" fill="#4b5f75">0.0095</text><polyline points="52.0,14.0 97.1,92.3 142.2,100.3 187.3,106.0 232.4,110.7 277.5,114.8 322.5,118.3 367.6,121.4 412.7,124.1 457.8,126.5 502.9,128.6 548.0,130.5" fill="none" stroke="#0b5a9a" stroke-width="2"/><circle cx="52.0" cy="14.0" r="3" fill="#0b5a9a"/><circle cx="97.1" cy="92.3" r="3" fill="#0b5a9a"/><circle cx="142.2" cy="100.3" r="3" fill="#0b5a9a"/><circle cx="187.3" cy="106.0" r="3" fill="#0b5a9a"/><circle cx="232.4" cy="110.7" r="3" fill="#0b5a9a"/><circle cx="277.5" cy="114.8" r="3" fill="#0b5a9a"/><circle cx="322.5" cy="118.3" r="3" fill="#0b5a9a"/><circle cx="367.6" cy="121.4" r="3" fill="#0b5a9a"/><circle cx="412.7" cy="124.1" r="3" fill="#0b5a9a"/><circle cx="457.8" cy="126.5" r="3" fill="#0b5a9a"/><circle cx="502.9" cy="128.6" r="3" fill="#0b5a9a"/><circle cx="548.0" cy="130.5" r="3" fill="#0b5a9a"/><text x="52.0" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">1</text><text x="142.2" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">3</text><text x="232.4" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">5</text><text x="322.5" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">7</text><text x="412.7" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">9</text><text x="502.9" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">11</text><text x="548.0" y="204" text-anchor="middle" font-size="12" fill="#4b5f75">12</text><text x="306.0" y="218" text-anchor="middle" font-size="12" fill="#4b5f75">epoch</text></svg></div>
+<p class="prov">The loss (cross-entropy plus the weight penalty) after each of 12 epochs.</p></section>
+<section class="panel"><h2>Results</h2><table><tr><td>Training data (parts)</td><td>2000</td></tr><tr><td>Test data (parts)</td><td>600</td></tr><tr><td>Loss, first and last epoch</td><td>0.0095, 0.0031</td></tr><tr><td>Gradient check, largest difference</td><td>1.66e-11</td></tr><tr><td>Test 1: templates with unseen words, accuracy</td><td>99.5%</td></tr><tr><td>Test 1: &#x27;other&#x27; precision and recall</td><td>1, 0.986</td></tr><tr><td>Test 2: paragraph parts, accuracy</td><td>47 of 47</td></tr><tr><td>Test 3: hard sentences, accuracy</td><td>21 of 24</td></tr><tr><td>Test 4: paragraphs ending right</td><td>12 of 12 (without the check: 12)</td></tr><tr><td>Test 4: paragraphs right step by step</td><td>12 of 12 (without the check: 9)</td></tr><tr><td>Numbers in the net</td><td>65634</td></tr></table><p class="prov">Wrong: the lantern drifts upward 2 metres; my heart sank 2 times that day; the cameraman slowly moves left.</p></section>
+</div>
+<section class="panel"><h2>Inside: the trained model on one input</h2><img src="files/matrices.png" alt="The trained model drawn as matrices: the lit columns of the first weights, the bias, ReLU, the second weights and the softmax" loading="lazy"></section>
+<div class="two">
+<section class="panel write"><h2>Aim</h2>
+<p>The motion reader (<code>MotionParse</code>) sometimes took a motion verb about something else as a motion of the object: "the camera holds on the kettle for a beat", "visitors often say the experience turns their sense of scale", "Mia laughed and turned to her brother". SubjectNet looks at each motion part and answers <strong>object</strong> (keep it) or <strong>other</strong> (set it aside).</p>
+<h2>Data</h2>
+<p>The sentences are written from 19 templates, each with its own label, and read by the real motion reader, so the net sees parts exactly as they arrive. There are 2,000 training parts and 600 test parts; the test nouns, names and abstract words never appear in training, so the test shows whether the net learnt sentence shape rather than words. No conversational-construct labels anything.</p>
+<h2>Design</h2>
+<p>Each part becomes a short list of features: the words before the verb (or, when there are none, the end of the part before it), how the part was joined to the one before, the verb, and the first words after it. The features are hashed into 2,048 slots of 0 or 1. Then 32 hidden units with ReLU, and a softmax over object and other: 65,634 numbers in all. It is trained with our own code (forward pass, backpropagation, Adam), written out in Wolfram and in Python, which agree to about 10⁻¹⁶.</p>
+<h2>Results</h2>
+<p>On test sentences with unseen words, 99.5% are right, and 'other' is found with precision 1.0 and recall 0.99. Every one of the 47 paragraph parts is right, and 21 of 24 deliberately hard sentences. With SubjectNet, all 12 test paragraphs are read right step by step; without it, 9 of 12.</p>
+<h2>Limits</h2>
+<p>The three hard sentences it gets wrong show its edges: "the lantern drifts upward 2 metres" (an unfamiliar subject with an unfamiliar verb), "my heart sank 2 times that day" (a figurative motion with a number), and "the cameraman slowly moves left" (a person who could be the moved thing). More templates of these kinds are the next step.</p></section>
+<section class="panel"><h2>Settings of this run</h2><table><tr><td>epochs</td><td>12</td></tr><tr><td>batch_size</td><td>64</td></tr><tr><td>lr</td><td>0.005</td></tr><tr><td>l2</td><td>0.0001</td></tr><tr><td>seed</td><td>1234</td></tr><tr><td>hidden</td><td>32</td></tr><tr><td>optimiser</td><td>Adam (0.9, 0.999, 1e-8)</td></tr><tr><td>initialisation</td><td>He, seed 1234</td></tr><tr><td>training data</td><td>2000 template parts (seed 11)</td></tr><tr><td>test data</td><td>600 template parts with unseen words (seed 22)</td></tr></table>
+<h2 id="downloads" style="margin-top:22px">Downloads</h2><ul class="files"><li><a href="files/SubjectNet.nb">SubjectNet.nb</a></li><li><a href="files/SubjectNet_as_matrices.nb">SubjectNet_as_matrices.nb</a></li><li><a href="files/weights.npz">weights.npz</a></li><li><a href="files/net.json">net.json</a></li></ul></section>
+</div>
+<p class="prov">Built from lossofgenerality/ccn-agent-free-form-language at 3de273e, training run 2026-11-24-seed1234 (ccnlab 0.1.0, Python 3.13.18, NumPy 2.5.3, CPU).</p>
+</main>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>
