@@ -56,7 +56,7 @@
   "purpose": "Learns the regular criss-cross weave of normal fabric, so that whatever it cannot redraw (holes, loose threads, runs, knots) shows up as the defect: the learnt counterpart of removing the weave with an FFT notch filter.",
   "numbers": 8464,
   "status": "trained",
-  "run": "2026-11-24-seed7",
-  "source": "lossofgenerality/ccn-net-lab@f45c1d9"
+  "run": "2026-11-24-rawfabrid-seed7",
+  "source": "lossofgenerality/ccn-net-lab@00bfd24"
  }
 ]

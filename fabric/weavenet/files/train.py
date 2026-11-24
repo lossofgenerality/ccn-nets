@@ -94,14 +94,14 @@ def split(names):
     return [i for i in range(len(names)) if i not in test], test
 
 
-def panels(name, img, rec, err, z, boxes, path, s):
+def panels(name, img, rec, err, z, boxes, path, s, score_title="Anomaly score (robust z)", mask=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
     fig, ax = plt.subplots(1, 5, figsize=(19.2, 4.3), dpi=100)
     show = [(img, "gray", "Input fabric"), (rec, "gray", "Redrawn by WeaveNet (the weave it learnt)"),
-            (err, "viridis", "Squared difference (smoothed)"), (z, "inferno", "Anomaly score (robust z)"), (img, "gray", f"Detected defects: {len(boxes)}")]
+            (err, "viridis", "Squared difference (smoothed)"), (z, "inferno", score_title), (img, "gray", f"Detected defects: {len(boxes)}")]
     for a, (m, cm, t) in zip(ax, show):
         if cm == "inferno":
             im = a.imshow(np.clip(z, 0, None), cmap=cm)
@@ -110,6 +110,9 @@ def panels(name, img, rec, err, z, boxes, path, s):
             a.imshow(m, cmap=cm)
         a.set_title(t, fontsize=11)
         a.set_xticks([]); a.set_yticks([])
+    if mask is not None:                      # the dataset's own outline of the defect, for comparison
+        ax[4].contour(mask, levels=[0.5], colors="#ff3b6b", linewidths=1.2)
+        ax[4].set_title(f"Detected defects: {len(boxes)} (green); true outline (pink)", fontsize=11)
     for (y0, x0, y1, x1, _) in boxes:
         ax[4].add_patch(Rectangle((x0 - 2, y0 - 2), x1 - x0 + 4, y1 - y0 + 4, fill=False, ec="#00e05a", lw=2))
     fig.text(0.005, 0.02, name, fontsize=8, color="#888")
