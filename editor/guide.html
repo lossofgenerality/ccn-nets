@@ -60,7 +60,7 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <p>The page keeps the structure of the CCN String Diagrams editor (<code>lossofgenerality/ccn-string-diagrams</code>): the canvas, drawing wires from port to port, moving, zooming, panning, undo, the inspector, Save and Open as JSON, and Export SVG. The string-diagram mathematics is replaced by the elements of a net.</p>
 <h2>Shared with tensor-algebra-nets</h2>
 <p><code>lossofgenerality/tensor-algebra-nets</code> shows this editor on its site, at <code>docs/net-diagrams.html</code>, by loading it from https://lossofgenerality.github.io/ccn-agent-free-form-language/editor/net-diagram-editor.html?example=tnparser.</p>
-<p><strong>Opening on an example.</strong> <code>?example=</code> followed by <code>subjectnet</code>, <code>ownet</code>, <code>tnparser</code>, <code>tnpolicy</code> or <code>tnvalue</code> opens the editor on that example. It also gives that page its own saved work in the browser, so a change made on the TensorNets page doesn't appear on this one, nor the other way round. Without it, the editor opens on SubjectNet, as on this project's site. A change pushed here therefore appears there at once; nothing needs copying. <strong>Keep this file's name and place.</strong> If it ever moves, change <code>EDITOR</code> in tensor-algebra-nets' <code>tools/units/build_glossary.py</code> and rebuild there.</p>
+<p><strong>Opening on an example.</strong> <code>?example=</code> followed by <code>subjectnet</code>, <code>seq2seq</code>, <code>transformer</code>, <code>ownet</code>, <code>tnparser</code>, <code>tnpolicy</code> or <code>tnvalue</code> opens the editor on that example. It also gives that page its own saved work in the browser, so a change made on the TensorNets page doesn't appear on this one, nor the other way round. Without it, the editor opens on SubjectNet, as on this project's site. A change pushed here therefore appears there at once; nothing needs copying. <strong>Keep this file's name and place.</strong> If it ever moves, change <code>EDITOR</code> in tensor-algebra-nets' <code>tools/units/build_glossary.py</code> and rebuild there.</p>
 <h2>The elements</h2>
 <table>
 <thead>
@@ -165,6 +165,16 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <td>the same</td>
 </tr>
 <tr>
+<td>LSTM encoder</td>
+<td>a stack of LSTM layers (Unit 1), optionally reading the source backwards; its output is the final states h and c of every layer</td>
+<td>layers, cells, reverse</td>
+</tr>
+<tr>
+<td>LSTM decoder</td>
+<td>a stack of LSTM layers that reads the target, each layer starting from the encoder's final states (the lower input)</td>
+<td>layers, cells (the encoder's)</td>
+</tr>
+<tr>
 <td>Pick, Pool</td>
 <td>one position, or the mean, maximum or sum over positions</td>
 <td>position; pooling</td>
@@ -190,9 +200,12 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 - tokens as a row of cells (the sample tokens can be set);
 - an embedding as columns of vectors, with a wave for sinusoidal positions or small squares for learnt ones, and a badge for shared weights;
 - the encoder and decoder as stacked layers with fans of attention and feed-forward blocks;
+- the LSTM encoder and decoder as stacked layers of cells joined by the arrows that carry the state;
 - the outputs as probability bars or value bars.</p>
 <p><strong>Teacher forcing.</strong> Tokens that reach a Decoder's target input are its target. The decoder reads them without the last token, and the Softmax per token is scored on them without the first. The Softmax (classes) and Dense elements work after Pick or Pool.</p>
 <p><strong>Examples</strong>, under Examples…:
+- the seq2seq LSTM of Unit 1, at the paper's size (4 layers of 1000 cells, 384,112,000 weights, as the paper's 384M);
+- the transformer of Unit 3, the paper's base model (d 512, 6 layers, 8 heads, 63,119,496 weights), without its label smoothing, whose 37000 × 37000 table is too big for a generated notebook;
 - owNet, the trained net of Unit 4;
 - tnParserNet, tnPolicyNet and tnValueNet, the three nets of the TensorNets design.</p>
 <p>They are drawn from the nets' definitions, in <code>tools/units/unit4.py</code> and <code>ff_tensornets_new.nb</code>.</p>

@@ -79,6 +79,7 @@ svg:hover .port{opacity:.9}
         <option value="tokens">Tokens (input)</option><option value="numbers">Numbers per token (input)</option>
         <option value="embed">Embedding</option><option value="project">Per-token layer</option><option value="add">Add</option>
         <option value="encoder">Encoder</option><option value="decoder">Decoder</option>
+        <option value="lstmenc">LSTM encoder</option><option value="lstmdec">LSTM decoder</option>
         <option value="pick">Pick a position</option><option value="pool">Pool</option>
         <option value="seqsoftmax">Softmax per token (output)</option><option value="possoftmax">Softmax over positions (output)</option>
         <option value="regression">Regression (output)</option>
@@ -166,7 +167,7 @@ const NetCore = (() => {
   const FEATURE_KEYS = ['Own', 'Verb', 'After', 'Prev', 'Join'];
   const FEATURE_LABEL = {Own:'Own words', Verb:'Verb', After:'Words after', Prev:'Words before', Join:'Joining word'};
   const ACTS = ['ReLU', 'GELU', 'Tanh', 'Sigmoid', 'None'];
-  const ins = n => n.kind === 'hash' || n.kind === 'concat' || n.kind === 'add' ? n.nIn : n.kind === 'decoder' ? 2 : ['feature', 'tokens', 'numbers'].includes(n.kind) ? 0 : 1;
+  const ins = n => n.kind === 'hash' || n.kind === 'concat' || n.kind === 'add' ? n.nIn : n.kind === 'decoder' || n.kind === 'lstmdec' ? 2 : ['feature', 'tokens', 'numbers'].includes(n.kind) ? 0 : 1;
   const outs = n => ['softmax', 'seqsoftmax', 'possoftmax', 'regression'].includes(n.kind) ? 0 : 1;
   const classesOf = n => String(n.classes || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -246,7 +247,7 @@ const NetCore = (() => {
   }
   const describe = n => ({feature:`Feature “${FEATURE_LABEL[n.key] || n.key}”`, hash:'Hash', slots:'Slots', dense:`Layer (${n.units} ${n.act})`,
     dropout:`Dropout ${n.rate}`, concat:'Join', softmax:'Softmax', tokens:`Tokens \u201c${n.name}\u201d`, numbers:`Numbers \u201c${n.name}\u201d`, embed:'Embedding',
-    project:'Per-token layer', add:'Add', encoder:'Encoder', decoder:'Decoder', seqsoftmax:'Softmax per token', pick:'Pick', pool:'Pool',
+    project:'Per-token layer', add:'Add', encoder:'Encoder', decoder:'Decoder', lstmenc:'LSTM encoder', lstmdec:'LSTM decoder', seqsoftmax:'Softmax per token', pick:'Pick', pool:'Pool',
     possoftmax:'Softmax over positions', regression:'Regression'})[n.kind] || n.kind;
 
   /* ---------- Wolfram text ---------- */
@@ -452,7 +453,7 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
   const plain = C => C.map(([st, t]) => st === 'Code' ? t : st === 'Section' ? `(* ---------- ${t} ---------- *)` : `(* ${t} *)`).join('\n\n');
 
   /* ================= Sequence nets: tokens, embeddings, encoders, decoders (as in tensor-algebra-nets) ================= */
-  const SEQ_KINDS = ['tokens', 'numbers', 'embed', 'project', 'add', 'encoder', 'decoder', 'seqsoftmax', 'pick', 'pool', 'possoftmax', 'regression'];
+  const SEQ_KINDS = ['tokens', 'numbers', 'embed', 'project', 'add', 'encoder', 'decoder', 'lstmenc', 'lstmdec', 'seqsoftmax', 'pick', 'pool', 'possoftmax', 'regression'];
   const SMALL_ONLY = ['feature', 'hash', 'slots', 'concat', 'dropout'];
   const OUT_KINDS = ['softmax', 'seqsoftmax', 'possoftmax', 'regression'];
   const isSeq = D => D.nodes.some(n => SEQ_KINDS.includes(n.kind));
@@ -474,7 +475,7 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
     for (const n of used) {
       const k = ins(n), ws = inWires(n.id);
       for (let i = 0; i < k; i++) if (!ws.some(w => w.to.port === i))
-        errors.push(`${describe(n)}: ${n.kind === 'decoder' ? (i ? 'the memory (the encoder)' : 'the target input') : k > 1 ? 'input ' + (i + 1) : 'its input'} is not connected.`);
+        errors.push(`${describe(n)}: ${n.kind === 'decoder' ? (i ? 'the memory (the encoder)' : 'the target input') : n.kind === 'lstmdec' ? (i ? 'the states (the LSTM encoder)' : 'the target input') : k > 1 ? 'input ' + (i + 1) : 'its input'} is not connected.`);
     }
     if (errors.length) return {errors, warnings};
     const order = [], seen = new Set(), visiting = new Set();
@@ -486,12 +487,12 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
     const tokensBehind = (id, first) => { const out = new Set(), st = [id]; let firstOnly = first;
       while (st.length) { const x = st.pop(), n = byId[x];
         if (n.kind === 'tokens') { out.add(x); continue; }
-        if (n.kind === 'decoder' || n.kind === 'encoder') { if (n.kind === 'decoder' && !firstOnly) { const s0 = inWires(x).find(w => w.to.port === 0); if (s0) st.push(s0.from.node); } continue; }
+        if (['decoder', 'encoder', 'lstmdec', 'lstmenc'].includes(n.kind)) { if ((n.kind === 'decoder' || n.kind === 'lstmdec') && !firstOnly) { const s0 = inWires(x).find(w => w.to.port === 0); if (s0) st.push(s0.from.node); } continue; }
         firstOnly = false;
         sourcesOf(x).forEach(s => st.push(s)); }
       return [...out]; };
     const targetTokens = new Set(), decTarget = {};
-    for (const n of used.filter(n => n.kind === 'decoder')) {
+    for (const n of used.filter(n => n.kind === 'decoder' || n.kind === 'lstmdec')) {
       const w0 = inWires(n.id).find(w => w.to.port === 0);
       const t = tokensBehind(w0.from.node, false);
       if (t.length !== 1) errors.push('A Decoder’s target input must come from one Tokens element (through its Embedding).');
@@ -499,7 +500,7 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
     }
     const decoderBehind = id => { const st = [id], seenD = new Set();
       while (st.length) { const x = st.pop(); if (seenD.has(x)) continue; seenD.add(x); const n = byId[x];
-        if (n.kind === 'decoder') return x; if (n.kind === 'tokens' || n.kind === 'encoder') continue; sourcesOf(x).forEach(s => st.push(s)); }
+        if (n.kind === 'decoder' || n.kind === 'lstmdec') return x; if (['tokens', 'encoder', 'lstmenc'].includes(n.kind)) continue; sourcesOf(x).forEach(s => st.push(s)); }
       return null; };
     // shapes, and the numbers in the net: learnt weights, and fixed numbers Wolfram also counts
     const shape = {}, shared = {}, info = {};
@@ -536,6 +537,19 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
           const mha = 4 * (d * d + d), ffn = d * dff + dff + dff * d + d, ln = 2 * d;
           w += L * (n.kind === 'encoder' ? mha + ffn + 2 * ln : 2 * mha + ffn + 3 * ln);
           shape[id] = {t:'seq', d}; break; }
+        case 'lstmenc': {
+          // a stack of LSTM layers (Unit 1): each layer of m cells on n inputs learns 4 (m n + m m + m) numbers; its output is the final states h and c of every layer
+          if (!want('seq', 'a sequence')) break;
+          const m = +n.cells, L = +n.layers;
+          if (!(m >= 1) || !(L >= 1)) { err(`${describe(n)} needs 1 or more cells and layers.`); break; }
+          for (let i = 0; i < L; i++) w += 4 * (m * (i ? m : s0.d) + m * m + m);
+          shape[id] = {t:'lstm', m, L}; break; }
+        case 'lstmdec': {
+          if (!ss.length || !ss[0] || ss[0].t !== 'seq' || !ss[1] || ss[1].t !== 'lstm') { err(`${describe(n)} takes a sequence (the target) and the states of an LSTM encoder.`); break; }
+          const m = +n.cells, L = +n.layers;
+          if (ss[1].m !== m || ss[1].L !== L) { err(`${describe(n)} starts from the encoder’s states, so it needs the same cells (${ss[1].m}) and layers (${ss[1].L}).`); break; }
+          for (let i = 0; i < L; i++) w += 4 * (m * (i ? m : s0.d) + m * m + m);
+          shape[id] = {t:'seq', d:m}; break; }
         case 'pick': if (!want('seq', 'a sequence')) break; shape[id] = {t:'vec', d:s0.d}; break;
         case 'pool': if (!want('seq', 'a sequence')) break; shape[id] = {t:'vec', d:s0.d}; break;
         case 'dense': if (!want('vec', 'a vector (after Pick or Pool)')) break; w += s0.d * n.units + +n.units; shape[id] = {t:'vec', d:+n.units}; break;
@@ -573,7 +587,7 @@ gradientCheckGen[] := Module[{sz = Join[{10}, ConstantArray[4, Length[actsA]], {
 
   function seqSummaryText(s) {
     const part = n => ({tokens:`${n.name} (${n.vocab} tokens)`, numbers:`${n.name} (${n.size} per token)`, embed:`embedding ${n.d}`, project:`per-token layer ${n.units}`, add:'add',
-      encoder:`encoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`, decoder:`decoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`,
+      encoder:`encoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`, decoder:`decoder ${n.layers} × (${n.heads} heads, FF ${n.dff} ${n.act})`, lstmenc:`LSTM encoder ${n.layers} × ${n.cells} cells${n.reverse ? ', source reversed' : ''}`, lstmdec:`LSTM decoder ${n.layers} × ${n.cells} cells`,
       pick:`position ${n.position}`, pool:`${n.op || 'Mean'} pool`, dense:`${n.units} ${n.act}`, softmax:`softmax over ${classesOf(n).length} classes (${outName(n)})`,
       seqsoftmax:`softmax per token over ${n.vocab} (${outName(n)})`, possoftmax:`softmax over positions (${outName(n)})`, regression:`regression, ${n.outputs} outputs (${outName(n)})`})[n.kind] || n.kind;
     return s.nodes.map(part).join('; ') + `; ${s.learnt.toLocaleString('en-GB')} weights learnt` + (s.fixed ? ` and ${s.fixed.toLocaleString('en-GB')} fixed numbers` : '');
@@ -611,6 +625,16 @@ ccnEncoder[d_, h_, dff_, act_, nL_] := NetChain[Table[ccnEncBlock[d, h, dff, act
 ccnDecoder[d_, h_, dff_, act_, nL_] := NetGraph[Association@Table["b" <> ToString[i] -> ccnDecBlock[d, h, dff, act], {i, nL}],
    Join[{NetPort["Input"] -> NetPort["b1", "Input"]}, Table[NetPort["Memory"] -> NetPort["b" <> ToString[i], "Memory"], {i, nL}],
     Table["b" <> ToString[i - 1] -> NetPort["b" <> ToString[i], "Input"], {i, 2, nL}]]];
+
+(* LSTM encoder and decoder (Unit 1): the encoder's final states h and c, layer by layer, are where the decoder starts *)
+ccnLSTMEncoder[m_, nL_, rev_] := NetGraph[Join[If[TrueQ[rev], <|"rev" -> SequenceReverseLayer[]|>, <||>],
+    Association@Table["l" <> ToString[i] -> LongShortTermMemoryLayer[m], {i, nL}]],
+   Join[{If[TrueQ[rev], NetPort["Input"] -> "rev" -> "l1", NetPort["Input"] -> "l1"]}, Table["l" <> ToString[i - 1] -> "l" <> ToString[i], {i, 2, nL}],
+    Flatten@Table[{NetPort["l" <> ToString[i], "State"] -> NetPort["State" <> ToString[i]], NetPort["l" <> ToString[i], "CellState"] -> NetPort["Cell" <> ToString[i]]}, {i, nL}]]];
+ccnLSTMDecoder[m_, nL_] := NetGraph[Association@Table["l" <> ToString[i] -> LongShortTermMemoryLayer[m], {i, nL}],
+   Join[{NetPort["Input"] -> "l1"}, Table["l" <> ToString[i - 1] -> "l" <> ToString[i], {i, 2, nL}],
+    Flatten@Table[{NetPort["State" <> ToString[i]] -> NetPort["l" <> ToString[i], "State"], NetPort["Cell" <> ToString[i]] -> NetPort["l" <> ToString[i], "CellState"]}, {i, nL}],
+    {NetPort["l" <> ToString[nL], "Output"] -> NetPort["Output"]}]];
 
 (* Fixed sinusoidal positions (Unit 4): sin(position \\[Times] frequency + phase), added to the embedding *)
 ccnSinusoid[d_] := NetGraph[<|"idx" -> SequenceIndicesLayer[], "pos" -> ElementwiseLayer[# - 1. &], "col" -> ReplicateLayer[1, 2],
@@ -659,6 +683,10 @@ ccnEmbed[d_, v_, pos_, maxLen_, scale_, shared_] := Module[{layers, conns, last 
         case 'encoder': L.push(`${k} -> ccnEncoder[${sh.d}, ${wlInt(n.heads)}, ${wlInt(n.dff)}, ${wlStr(n.act)}, ${wlInt(n.layers)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
         case 'decoder': L.push(`${k} -> ccnDecoder[${sh.d}, ${wlInt(n.heads)}, ${wlInt(n.dff)}, ${wlStr(n.act)}, ${wlInt(n.layers)}]`);
           conns.push(`${src(n.from[0])} -> NetPort[${k}, "Input"]`, `${src(n.from[1])} -> NetPort[${k}, "Memory"]`); break;
+        case 'lstmenc': L.push(`${k} -> ccnLSTMEncoder[${wlInt(n.cells)}, ${wlInt(n.layers)}, ${n.reverse ? 'True' : 'False'}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
+        case 'lstmdec': L.push(`${k} -> ccnLSTMDecoder[${wlInt(n.cells)}, ${wlInt(n.layers)}]`); conns.push(`${src(n.from[0])} -> NetPort[${k}, "Input"]`);
+          for (let i = 1; i <= +n.layers; i++) conns.push(`NetPort[${src(n.from[1])}, "State${i}"] -> NetPort[${k}, "State${i}"]`, `NetPort[${src(n.from[1])}, "Cell${i}"] -> NetPort[${k}, "Cell${i}"]`);
+          break;
         case 'pick': L.push(`${k} -> PartLayer[${wlInt(n.position)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
         case 'pool': L.push(`${k} -> AggregationLayer[${({Mean:'Mean', Max:'Max', Sum:'Total'})[n.op] || 'Mean'}, 1]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
         case 'dense': L.push(`${k} -> ccnLinear[${wlInt(n.units)}, ${wlStr(n.act)}]`); conns.push(`${src(n.from[0])} -> ${k}`); break;
@@ -693,7 +721,7 @@ ccnEmbed[d_, v_, pos_, maxLen_, scale_, shared_] := Module[{layers, conns, last 
     const inputs = s.nodes.filter(n => n.kind === 'tokens' || n.kind === 'numbers').map(n => n.kind === 'tokens' ? `${n.name}: lists of token indices, 1 to ${n.vocab}` : `${n.name}: lists of ${n.size} numbers per token`);
     add('Title', `${set.name}: a net generated from a diagram`);
     add('Text', `Generated by the CCN Net Diagram Editor (editor/net-diagram-editor.html) on ${date} UTC.\nThe net: ${seqSummaryText(s)}.\n` +
-      'It is built from the parts of tensor-algebra-nets (attention, feed-forward, layer normalisation, embeddings) with Wolfram’s layers.');
+      'It is built from the parts of tensor-algebra-nets (LSTMs, attention, feed-forward, layer normalisation, embeddings) with Wolfram’s layers.');
     add('Text', 'By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)\nAI System Programming Group');
     add('Section', 'The diagram');
     add('Code', `(* The diagram as the editor saved it; open it again in the editor with Open *)\ndiagramJSON = ${wlStr(JSON.stringify({diagram:D, settings:set}))};`);
@@ -737,6 +765,24 @@ ccnEmbed[d_, v_, pos_, maxLen_, scale_, shared_] := Module[{layers, conns, last 
       N('de', {kind:'decoder', layers:2, heads:4, dff:128, act:'ReLU', x:620, y:200});
       N('so', {kind:'seqsoftmax', name:'Probabilities', vocab:10, tie:'W', smoothing:0.1, x:820, y:290});
       W('tS', 'eS'); W('tT', 'eT'); W('eS', 'en'); W('eT', 'de', 0); W('en', 'de', 1); W('de', 'so');
+    } else if (key === 'seq2seq') {
+      // Unit 1: Sutskever, Vinyals and Le (2014), the sizes of the paper: 4 layers of 1000 cells, 1000-dimensional embeddings, the source read backwards
+      N('tS', {kind:'tokens', name:'Source', vocab:160000, sample:'A B C', x:90, y:320}); N('tT', {kind:'tokens', name:'Target', vocab:80000, sample:'s W X Y Z', x:90, y:100});
+      N('eS', {kind:'embed', d:1000, pos:'none', maxLen:96, scale:false, shared:'', x:250, y:320}); N('eT', {kind:'embed', d:1000, pos:'none', maxLen:96, scale:false, shared:'', x:250, y:100});
+      N('en', {kind:'lstmenc', layers:4, cells:1000, reverse:true, x:430, y:320});
+      N('de', {kind:'lstmdec', layers:4, cells:1000, x:640, y:200});
+      N('so', {kind:'seqsoftmax', name:'Probabilities', vocab:80000, tie:'', smoothing:0, x:840, y:290});
+      W('tS', 'eS'); W('tT', 'eT'); W('eS', 'en'); W('eT', 'de', 0); W('en', 'de', 1); W('de', 'so');
+    } else if (key === 'transformer') {
+      // Unit 3: Vaswani et al. (2017), the base model: d 512, 6 layers, 8 heads, FF 2048 ReLU, one shared 37000-token vocabulary for source, target and output.
+      // The paper also smooths the labels (ε 0.1); here ε is 0, since a 37000 × 37000 smoothing table is too big for a generated notebook
+      const e = {kind:'embed', d:512, pos:'sinusoidal', maxLen:96, scale:true, shared:'W'};
+      N('tS', {kind:'tokens', name:'Source', vocab:37000, sample:'A B C', x:90, y:320}); N('tT', {kind:'tokens', name:'Target', vocab:37000, sample:'s W X Y', x:90, y:100});
+      N('eS', {...e, x:250, y:320}); N('eT', {...e, x:250, y:100});
+      N('en', {kind:'encoder', layers:6, heads:8, dff:2048, act:'ReLU', x:420, y:320});
+      N('de', {kind:'decoder', layers:6, heads:8, dff:2048, act:'ReLU', x:620, y:200});
+      N('so', {kind:'seqsoftmax', name:'Probabilities', vocab:37000, tie:'W', smoothing:0, x:820, y:290});
+      W('tS', 'eS'); W('tT', 'eT'); W('eS', 'en'); W('eT', 'de', 0); W('en', 'de', 1); W('de', 'so');
     } else if (key === 'tnparser') {
       N('tS', {kind:'tokens', name:'Input', vocab:32, sample:'( x1 ⨁ x2 )', x:90, y:320}); N('tT', {kind:'tokens', name:'Target', vocab:22, sample:'s P S x1 x2', x:90, y:100});
       N('eS', {kind:'embed', ...tnEmb, x:240, y:320}); N('eT', {kind:'embed', ...tnEmb, x:240, y:100});
@@ -758,7 +804,8 @@ ccnEmbed[d_, v_, pos_, maxLen_, scale_, shared_] := Module[{layers, conns, last 
     }
     return {nodes, wires};
   }
-  const EXAMPLES = [['subjectnet', 'SubjectNet (nets/SubjectNet.nb)'], ['ownet', 'owNet: Unit 4 of tensor-algebra-nets'],
+  const EXAMPLES = [['subjectnet', 'SubjectNet (nets/SubjectNet.nb)'], ['seq2seq', 'Seq2seq LSTM: Unit 1 of tensor-algebra-nets'],
+    ['transformer', 'Transformer: Unit 3 of tensor-algebra-nets'], ['ownet', 'owNet: Unit 4 of tensor-algebra-nets'],
     ['tnparser', 'tnParserNet: TensorNets parser'], ['tnpolicy', 'tnPolicyNet: TensorNets policy'], ['tnvalue', 'tnValueNet: TensorNets value']];
   /* ---------- Python: a script that uses our own code in python/ccn_nets (no neural-net library) ---------- */
   const FEATURE_PY = {
@@ -967,6 +1014,7 @@ const slabCount = n => Math.min(Math.max(+n.layers || 1, 1), 3);
 const SEQ_SIZE = {
   tokens:() => ({w:94, h:20}), numbers:() => ({w:94, h:20}), embed:n => ({w:n.shared || n.scale ? 84 : 60, h:72}), project:() => ({w:70, h:56}), add:() => ({w:34, h:34}),
   encoder:n => ({w:116, h:slabCount(n) * 34 + (slabCount(n) - 1) * 8}), decoder:n => ({w:116, h:Math.max(2, slabCount(n)) * 34 + (Math.max(2, slabCount(n)) - 1) * 8}),
+  lstmenc:n => ({w:116, h:slabCount(n) * 30 + (slabCount(n) - 1) * 8}), lstmdec:n => ({w:116, h:Math.max(2, slabCount(n)) * 30 + (Math.max(2, slabCount(n)) - 1) * 8}),
   seqsoftmax:() => ({w:68, h:70}), pick:() => ({w:94, h:40}), pool:() => ({w:94, h:52}), possoftmax:() => ({w:96, h:56}), regression:() => ({w:76, h:56}),
 };
 function sampleTokens(n) {
@@ -1027,6 +1075,24 @@ function drawSeq(g, n, x0, y0, w, h) {
         `${n.kind === 'decoder' ? 'self + cross · ' : ''}${n.heads} heads · FF ${n.dff} ${n.act}`]);
       if (n.kind === 'decoder') { text(g, x0 + 4, y0 - 9, '↓ target', 'lbl', {'text-anchor':'start', fill:P.s});
         text(g, x0 - 12, y0 + h - 4, 'memory →', 'lbl', {'text-anchor':'end', fill:P.s}); }
+      break; }
+    case 'lstmenc': case 'lstmdec': {
+      // each slab is one LSTM layer unrolled: cells left to right, the state carried along the arrows
+      const P = n.kind === 'lstmenc' ? PAL.enc : PAL.dec, k = n.kind === 'lstmenc' ? slabCount(n) : Math.max(2, slabCount(n));
+      for (let i = 0; i < k; i++) {
+        const sy = y0 + i * 38;
+        el('rect', {x:x0, y:sy, width:w, height:30, rx:6, fill:P.f, stroke:P.s, 'stroke-width':0.6}, g);
+        for (let j = 0; j < 4; j++) {
+          const cx = x0 + 10 + j * 26;
+          el('rect', {x:cx, y:sy + 8, width:16, height:14, rx:3, fill:P.c, stroke:P.s, 'stroke-width':0.6}, g);
+          if (j < 3) el('line', {x1:cx + 16, y1:sy + 15, x2:cx + 26, y2:sy + 15, stroke:P.s, 'stroke-width':0.9}, g);
+        }
+      }
+      if (+n.layers > k) for (const dy of [-5, 0, 5]) el('circle', {cx:x0 + w + 8, cy:n.y + dy, r:1.4, fill:P.s}, g);
+      labelsBelow(g, n, y0 + h, [`${n.kind === 'lstmenc' ? 'LSTM encoder' : 'LSTM decoder'} · ${n.layers} layer${+n.layers === 1 ? '' : 's'}`,
+        `${fmt(n.cells)} cells${n.kind === 'lstmenc' && n.reverse ? ' · source reversed' : ''}${n.kind === 'lstmdec' ? ' · starts from the states' : ''}`]);
+      if (n.kind === 'lstmdec') { text(g, x0 + 4, y0 - 9, '↓ target', 'lbl', {'text-anchor':'start', fill:P.s});
+        text(g, x0 - 12, y0 + h - 4, 'states →', 'lbl', {'text-anchor':'end', fill:P.s}); }
       break; }
     case 'seqsoftmax': {
       const P = PAL.out;
@@ -1223,6 +1289,8 @@ const DEFAULTS = {
   add:{kind:'add', nIn:2},
   encoder:{kind:'encoder', layers:3, heads:4, dff:512, act:'GELU'},
   decoder:{kind:'decoder', layers:3, heads:4, dff:512, act:'GELU'},
+  lstmenc:{kind:'lstmenc', layers:2, cells:128, reverse:true},
+  lstmdec:{kind:'lstmdec', layers:2, cells:128},
   seqsoftmax:{kind:'seqsoftmax', name:'Probabilities', vocab:22, tie:'', smoothing:0},
   pick:{kind:'pick', position:1},
   pool:{kind:'pool', op:'Mean'},
@@ -1288,6 +1356,11 @@ function inspector() {
     decoder:`<div class="row"><div><label>Layers</label><input type="number" id="iLayers" min="1" value="${n.layers}"></div><div><label>Heads</label><input type="number" id="iHeads" min="1" value="${n.heads}"></div></div>
       <div class="row"><div><label>Feed-forward width</label><input type="number" id="iDff" min="1" value="${n.dff}"></div><div><label>Activation</label><select id="iAct">${opt(['ReLU', 'GELU', 'Tanh', 'Sigmoid'], n.act)}</select></div></div>
       <div class="hint" style="margin-top:6px">Upper input: the target sequence. Lower input: the memory, the encoder's output. Each layer: causal self-attention, cross-attention to the memory, and a feed-forward net.</div>`,
+    lstmenc:`<div class="row"><div><label>Layers</label><input type="number" id="iLayers" min="1" value="${n.layers}"></div><div><label>Cells per layer</label><input type="number" id="iCells" min="1" value="${n.cells}"></div></div>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="iReverse"${n.reverse ? ' checked' : ''}> read the source backwards</label>
+      <div class="hint" style="margin-top:6px">A stack of LSTM layers, as in Unit 1. Its output is the final states h and c of every layer: wire it to an LSTM decoder's lower input.</div>`,
+    lstmdec:`<div class="row"><div><label>Layers</label><input type="number" id="iLayers" min="1" value="${n.layers}"></div><div><label>Cells per layer</label><input type="number" id="iCells" min="1" value="${n.cells}"></div></div>
+      <div class="hint" style="margin-top:6px">Upper input: the target sequence. Lower input: an LSTM encoder, whose final states start each layer. Same layers and cells as the encoder.</div>`,
     seqsoftmax:`<div class="row"><div><label>Name (the port)</label><input type="text" id="iName" value="${escA(n.name)}"></div>
       <div><label>Vocabulary size</label><input type="number" id="iVocab" min="2" value="${n.vocab}"></div></div>
       <div class="row"><div><label>Tied to shared weights</label><input type="text" id="iTie" value="${escA(n.tie)}" placeholder="none"></div>
@@ -1323,10 +1396,12 @@ function inspector() {
   on('#iLayers', v => n.layers = int(v));
   on('#iHeads', v => n.heads = int(v));
   on('#iDff', v => n.dff = int(v));
+  on('#iCells', v => n.cells = int(v));
   on('#iPosition', v => n.position = int(v));
   on('#iOp', v => n.op = v);
   on('#iOutputs', v => n.outputs = int(v));
   on('#iTarget', v => n.target = v.trim().replace(/[^\w]/g, '') || 'Target');
+  const rv = $('#iReverse'); if (rv) rv.addEventListener('change', () => { pushUndo(); n.reverse = rv.checked; render(); inspector(); });
   const sc = $('#iScale'); if (sc) sc.addEventListener('change', () => { pushUndo(); n.scale = sc.checked; render(); inspector(); });
 }
 function trimWires(n) { D.wires = D.wires.filter(w => !(w.to.node === n.id && w.to.port >= NetCore.ins(n)) && !(w.from.node === n.id && w.from.port >= NetCore.outs(n))); }
@@ -1431,7 +1506,7 @@ function subjectNetDiagram() {
   return {nodes, wires};
 }
 $('#exSel').innerHTML = '<option value="">Examples\u2026</option>' + NetCore.EXAMPLES.map(([k, t]) => `<option value="${k}">${escA(t)}</option>`).join('');
-const EXAMPLE_NAMES = {subjectnet:'SubjectNetFromDiagram', ownet:'owNetFromDiagram', tnparser:'tnParserNetFromDiagram', tnpolicy:'tnPolicyNetFromDiagram', tnvalue:'tnValueNetFromDiagram'};
+const EXAMPLE_NAMES = {subjectnet:'SubjectNetFromDiagram', seq2seq:'seq2seqFromDiagram', transformer:'transformerFromDiagram', ownet:'owNetFromDiagram', tnparser:'tnParserNetFromDiagram', tnpolicy:'tnPolicyNetFromDiagram', tnvalue:'tnValueNetFromDiagram'};
 $('#exSel').onchange = e => { const k = e.target.value; if (!k) return; pushUndo(); D = NetCore.example(k); $('#sName').value = EXAMPLE_NAMES[k] || $('#sName').value; select(null); fit(); save(); e.target.value = ''; };
 $('#addSeq').onchange = e => { const k = e.target.value; if (k) addNode(k); e.target.value = ''; };
 
