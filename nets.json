@@ -7,7 +7,7 @@
   "numbers": 65634,
   "status": "trained",
   "run": "2026-11-24-seed1234",
-  "source": "lossofgenerality/ccn-agent-free-form-language@7fb0150"
+  "source": "lossofgenerality/ccn-agent-free-form-language@d2077a7"
  },
  {
   "project": "tensor-algebras",
@@ -17,7 +17,7 @@
   "numbers": 59950,
   "status": "trained in Wolfram (Unit 4)",
   "run": "",
-  "source": "lossofgenerality/monoid-algebra-nets@1ecf000"
+  "source": "lossofgenerality/monoid-algebra-nets@e04b138"
  },
  {
   "project": "tensor-algebras",
@@ -27,7 +27,7 @@
   "numbers": 1422870,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/monoid-algebra-nets@1ecf000"
+  "source": "lossofgenerality/monoid-algebra-nets@e04b138"
  },
  {
   "project": "tensor-algebras",
@@ -37,7 +37,7 @@
   "numbers": 611468,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/monoid-algebra-nets@1ecf000"
+  "source": "lossofgenerality/monoid-algebra-nets@e04b138"
  },
  {
   "project": "tensor-algebras",
@@ -47,7 +47,7 @@
   "numbers": 626819,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/monoid-algebra-nets@1ecf000"
+  "source": "lossofgenerality/monoid-algebra-nets@e04b138"
  },
  {
   "project": "fabric",
