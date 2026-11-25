@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en-GB"><head><meta charset="utf-8"><script>/* CCN Cloud settings for the TA. Only the pass key is typed on the page. */
+window.CCN_NETLAB_CONFIG = window.CCN_NETLAB_CONFIG || {"MODEL": "claude-opus-5-5", "KERNEL_URL": "https://www.wolframcloud.com/obj/ccn2/NetLabKernel"};</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>owNet · User guide · CCN Nets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
@@ -54,8 +56,8 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true}],throwOnError:false})"></script>
-</head><body>
-<main class="band guide"><p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets) · <a href="./">owNet</a></p><h1 id="ownet-user-guide">owNet: User Guide</h1>
+<link rel="stylesheet" href="../../ta/ta.css"><script src="../../ta/ta.js"></script></head><body>
+<main class="band guide"><p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets) · <a href="./">owNet</a> · <a href="#ta" onclick="document.body.classList.add('ta-shown')">Ask the TA</a></p><h1 id="ownet-user-guide">owNet: User Guide</h1>
 <p><em>A small transformer that expands ⨂/⨁ expressions, checked by an exact oracle, in Wolfram, with its Python counterparts</em></p>
 <p>Computational Classnotes · 25 November 2026</p>
 <p><strong>Companion to:</strong> the TensorNets units of learning (Unit 4 · Building Our Own Net) and the CCN Net Lab catalogue (https://lossofgenerality.github.io/ccn-nets/tensor-algebras/ownet/)</p>
@@ -658,5 +660,10 @@ NET  10 tokens; d 32, 4 heads, FF 128 ReLU; 2 + 2 layers; shared embedding
 <p>By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
 AI System Programming Laboratory</p>
 <p>Follows Sutskever, Vinyals and Le (2014), Lample and Charton (2019) and Vaswani et al. (2017), through Units 1–3.</p>
-<p>© Computational Classnotes · CC BY-NC-SA 4.0</p></main><footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p></main><button class="ta-open" type="button" onclick="document.body.classList.toggle('ta-shown')">Ask the TA</button>
+<aside class="ta-drawer" id="ta" aria-label="Ask the TA"><div id="ta-mount"></div>
+<p class="ta-aside">The TA is an AI teaching assistant, reached through CCN Cloud. It reads this guide and the sources listed in its knowledge pack, and runs Wolfram code in a sandboxed kernel.</p></aside>
+<script>if (location.hash === '#ta') document.body.classList.add('ta-shown');
+CCNTA.mount(document.getElementById('ta-mount'), {knowledge: 'ta.json', title: 'Ask the TA: owNet', here: 'the user guide of owNet'});</script>
+<footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
 </body></html>
