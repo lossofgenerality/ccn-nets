@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tnPolicyNet · User guide · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.guide{max-width:980px;display:block}
+.guide td:last-child{text-align:left;white-space:normal}
+.guide th{text-align:left;border-bottom:2px solid var(--line);padding:7px 4px}
+.guide table{margin:10px 0 18px;display:block;overflow-x:auto}
+.guide h2{font-size:24px;margin:34px 0 10px;padding-top:10px;border-top:1px solid var(--line)}
+.guide h3{font-size:19px;margin:22px 0 8px}
+.guide p,.guide li{max-width:78ch}
+.guide pre{background:#0a2540;color:#e8f1f8;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:14px;line-height:1.45}
+.guide code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.guide p code,.guide td code,.guide li code{background:#e8edf3;padding:1px 4px;border-radius:3px}
+.guide .katex-display{overflow-x:auto;overflow-y:hidden}
+</style><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+ onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true}],throwOnError:false})"></script>
+</head><body>
+<main class="band guide"><p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets) · <a href="./">tnPolicyNet</a></p><h1 id="tnpolicynet-user-guide">tnPolicyNet: User Guide</h1>
+<p><em>The TensorNets rewrite policy: a transformer that chooses which sound rule to apply, and where, to expand, factor or simplify ⨂/⨁ expressions</em></p>
+<p>Computational Classnotes · 25 November 2026</p>
+<p><strong>Companion to:</strong> TensorNets (<code>DESIGN-tensornets.md</code>), the TensorNets units of learning and the CCN Net Lab catalogue (https://lossofgenerality.github.io/ccn-nets/tensor-algebras/tnpolicynet/)</p>
+<p><strong>Files covered:</strong> <code>ff_tensornets_new.nb</code>, <code>ff_tensornets_test.nb</code>, <code>nets/tnpolicynet/train/tnPolicyNetFromDiagram.nb</code>, <code>python/tensor_parser.py</code></p>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p>
+<h2 id="contents">Contents</h2>
+<ol>
+<li>What it is</li>
+<li>Before you start</li>
+<li>Finding your way around</li>
+<li>The mathematics</li>
+<li>The configuration, part by part</li>
+<li>Using it in Wolfram</li>
+<li>Python</li>
+<li>Training it yourself</li>
+<li>Results</li>
+<li>A complete worked session</li>
+<li>Messages you may see</li>
+<li>Quick reference card</li>
+<li>Files</li>
+<li>Credits, copyright and licence</li>
+</ol>
+<hr />
+<h2 id="1-what-it-is">1. What it is</h2>
+<p>tnPolicyNet simplifies. Given a goal and an expression in prefix form, it chooses <strong>which rule</strong> to apply and <strong>at which node</strong>. The exact engine applies the rule. Because every rule is sound and the engine only offers legal moves, every result is correct, whatever the quality of the net.</p>
+<p>It is a transformer encoder with d = 128, 4 heads, a feed-forward width of 512 (GELU) and 3 layers, with two heads on top: <strong>611,468 numbers</strong>, all learnt. Its oracle is <code>tnOracleStep</code>: the first node in preorder at which a goal rule applies, and there the rule highest in the goal's order.</p>
+<h3 id="tensornets-in-one-paragraph">TensorNets in one paragraph</h3>
+<p>TensorNets splits work on ⨂/⨁ expressions into three nets, since the three tasks differ in kind: parsing is sequence-to-sequence translation (<code>tnParserNet</code>), simplification is a sequence of decisions (<code>tnPolicyNet</code>) and evaluation is regression (<code>tnValueNet</code>). Each net is paired with an exact symbolic counterpart, its <em>oracle</em>, which labels its training data and checks its answers. The nets decide; the exact engine executes.</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Net</th>
+<th>Oracle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Parse</td>
+<td><code>tnParserNet</code>: encoder–decoder, tokens → prefix tree</td>
+<td><code>tnRefParse</code> (recursive descent, as in <code>tensor_parser.py</code>)</td>
+</tr>
+<tr>
+<td>Simplify</td>
+<td><code>tnPolicyNet</code>: encoder, two heads, <em>which rule</em> and <em>at which node</em></td>
+<td><code>tnOracleStep</code> (the first applicable rule, in a preorder scan)</td>
+</tr>
+<tr>
+<td>Evaluate</td>
+<td><code>tnValueNet</code>: encoder, pooled regression</td>
+<td><code>tnDimension</code>, <code>tnTermCount</code>, <code>tnNumeric</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-before-you-start">2. Before you start</h2>
+<h3 id="what-you-need">What you need</h3>
+<table>
+<thead>
+<tr>
+<th>For</th>
+<th>You need</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wolfram</td>
+<td>Wolfram 14 or later (tested on Wolfram 15.0). Nothing else.</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>Python 3.9 or later, for the exact counterpart <code>python/tensor_parser.py</code>. NumPy only for its <code>evaluate</code>.</td>
+</tr>
+<tr>
+<td>Training at full size</td>
+<td>about an hour or more on a CPU for all three nets</td>
+</tr>
+</tbody>
+</table>
+<h3 id="opening-it">Opening it</h3>
+<ol>
+<li>Open <code>ff_tensornets_new.nb</code>, choose Evaluation ▸ Quit Kernel ▸ Local, and evaluate its one cell. Every function is defined; nothing is printed and <strong>nothing is written to the Wolfram Cloud</strong>.</li>
+<li>Without trained nets, every function still works: it uses the exact engine (the oracles) and says so (<code>"Method" -&gt; "Oracle"</code> or <code>"Reference"</code>).</li>
+<li>To train the three nets, run <code>tnTrainAll[]</code>. Progress goes to <code>ff_tensornets_log.nb</code>, beside the notebook.</li>
+<li>To keep the trained nets, run <code>tnSaveNets[]</code>, and later <code>tnLoadNets[]</code>. These, and the release <code>tensorNetsSave[]</code>, are the only calls that write to the Cloud, and only when you make them.</li>
+</ol>
+<p><strong>Status, 25 November 2026.</strong> The design is drawn and tested (22 of 22 checks pass), and Wolfram's count of the net is confirmed. <strong>Full-size training has not yet been done.</strong></p>
+<h2 id="3-finding-your-way-around">3. Finding your way around</h2>
+<table>
+<thead>
+<tr>
+<th>You want to</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Use TensorNets</td>
+<td>§6, with the examples as the kernel returns them</td>
+</tr>
+<tr>
+<td>Understand what tnPolicyNet computes</td>
+<td>§4 and §5</td>
+</tr>
+<tr>
+<td>Work in Python</td>
+<td>§7</td>
+</tr>
+<tr>
+<td>Train it</td>
+<td>§8</td>
+</tr>
+<tr>
+<td>Learn how the parts are made</td>
+<td>Units 1–4 in <code>docs/units/</code>, and Appendix A of <code>DESIGN-tensornets.md</code></td>
+</tr>
+<tr>
+<td>See or change the design</td>
+<td>the CCN Net Diagram Editor, Examples ▸ tnPolicyNet</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-the-mathematics">4. The mathematics</h2>
+<h3 id="attention-and-the-blocks">Attention and the blocks</h3>
+<p>Each head computes</p>
+<div class="math">$$
+\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\!\left(\frac{QK^{\mathsf T}}{\sqrt{d_k}}\right)V,\qquad d_k=d/h=32,
+$$</div>
+<p>and the four heads are joined and projected back to d = 128. Every sub-layer is wrapped as LayerNorm(x + Sublayer(x)). The feed-forward layer is W₂ GELU(W₁x + b₁) + b₂, applied at every position. Tokens are embedded in 128 dimensions and a learnt position embedding (up to 96 positions) is added.</p>
+<h3 id="the-rules">The rules</h3>
+<p>All eleven are exact and sound:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Rewrites</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZeroSum</code></td>
+<td>0 ⨁ A → A, A ⨁ 0 → A</td>
+</tr>
+<tr>
+<td><code>ZeroProd</code></td>
+<td>0 ⨂ A → 0, A ⨂ 0 → 0</td>
+</tr>
+<tr>
+<td><code>UnitProd</code></td>
+<td>𝟙 ⨂ A → A, A ⨂ 𝟙 → A</td>
+</tr>
+<tr>
+<td><code>PowerExpand</code></td>
+<td>A^2 → A ⨂ A; A^k → A ⨂ A^(k−1) for k &gt; 2</td>
+</tr>
+<tr>
+<td><code>DistRight</code></td>
+<td>(A ⨁ B) ⨂ C → A⨂C ⨁ B⨂C</td>
+</tr>
+<tr>
+<td><code>DistLeft</code></td>
+<td>A ⨂ (B ⨁ C) → A⨂B ⨁ A⨂C</td>
+</tr>
+<tr>
+<td><code>AssocSum</code></td>
+<td>(A ⨁ B) ⨁ C → A ⨁ (B ⨁ C)</td>
+</tr>
+<tr>
+<td><code>AssocProd</code></td>
+<td>(A ⨂ B) ⨂ C → A ⨂ (B ⨂ C)</td>
+</tr>
+<tr>
+<td><code>FactorLeft</code></td>
+<td>A⨂B ⨁ A⨂C → A ⨂ (B ⨁ C), also at the head of a longer sum</td>
+</tr>
+<tr>
+<td><code>FactorRight</code></td>
+<td>A⨂C ⨁ B⨂C → (A ⨁ B) ⨂ C, also at the head of a longer sum</td>
+</tr>
+<tr>
+<td><code>PowerFold</code></td>
+<td>A ⨂ A → A^2; A ⨂ A^k → A^(k+1); the same at the head of a longer product</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-goals">The goals</h3>
+<ul>
+<li><code>"Expand"</code>: distribute ⨂ over ⨁, remove 0 and 𝟙, expand powers, right-associate. Rules, in the oracle's order: ZeroSum, ZeroProd, UnitProd, PowerExpand, DistRight, DistLeft, AssocSum, AssocProd.</li>
+<li><code>"Factor"</code>: the reverse: take common factors out and fold powers. Rules: ZeroSum, ZeroProd, UnitProd, AssocSum, AssocProd, FactorLeft, FactorRight, PowerFold.</li>
+<li><code>"Simplify"</code>: Expand, then Factor, keeping the result only if it is no longer than the input.</li>
+</ul>
+<h3 id="the-two-heads">The two heads</h3>
+<p>The goal token (<code>&lt;Expand&gt;</code> or <code>&lt;Factor&gt;</code>) is put before the prefix sequence. After the encoder, the <strong>rule head</strong> reads the goal position and gives a softmax over the 11 rules; the <strong>node head</strong> scores every position and gives a softmax over the nodes. Training minimises the two cross-entropies against the oracle's step:</p>
+<div class="math">$$
+L=-\log p_{\text{rule}}(r^\ast)-\log p_{\text{node}}(k^\ast).
+$$</div>
+<h3 id="choosing-a-move">Choosing a move</h3>
+<p>The engine lists every <strong>legal</strong> (rule, node) pair (<code>tnLegalMoves</code>), and the pair with the largest p_rule(r) · p_node(k) is taken (<code>tnPolicyStep</code>). An illegal step can never be taken, and Expand always terminates in its normal form.</p>
+<h3 id="verification">Verification</h3>
+<p><code>tnEquivalentQ</code> expands both sides into words and compares them as multisets. ⨁ is commutative up to natural isomorphism; the order of ⨂ is never changed.</p>
+<h2 id="5-the-configuration-part-by-part">5. The configuration, part by part</h2>
+<h3 id="the-shared-parts-d-128-4-heads-feed-forward-512-gelu">The shared parts (d = 128, 4 heads, feed-forward 512, GELU)</h3>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Formula</th>
+<th>Numbers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>attention layer</td>
+<td>4 × (128² + 128): query, key, value and output projections</td>
+<td>66,048</td>
+</tr>
+<tr>
+<td>feed-forward layer</td>
+<td>128·512 + 512 + 512·128 + 128</td>
+<td>131,712</td>
+</tr>
+<tr>
+<td>LayerNorm</td>
+<td>2 × 128 (scale and shift)</td>
+<td>256</td>
+</tr>
+<tr>
+<td>encoder block</td>
+<td>attention + feed-forward + 2 LayerNorms</td>
+<td>198,272</td>
+</tr>
+<tr>
+<td>encoder, 3 blocks</td>
+<td></td>
+<td>594,816</td>
+</tr>
+<tr>
+<td>decoder block</td>
+<td>2 attentions (causal self, cross) + feed-forward + 3 LayerNorms</td>
+<td>264,576</td>
+</tr>
+<tr>
+<td>learnt positions</td>
+<td>96 positions × 128</td>
+<td>12,288</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tnpolicynet">tnPolicyNet</h3>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Numbers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>embedding: 22 tokens × 128, plus positions 96 × 128</td>
+<td>15,104</td>
+</tr>
+<tr>
+<td>encoder, 3 blocks</td>
+<td>594,816</td>
+</tr>
+<tr>
+<td>rule head: the goal position → 11 rules, 11 × 128 + 11</td>
+<td>1,419</td>
+</tr>
+<tr>
+<td>node head: every position → 1 score, 128 + 1, softmax over positions</td>
+<td>129</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>611,468</strong></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Input</code></td>
+<td>the goal token and the prefix tokens (vocabulary 22)</td>
+</tr>
+<tr>
+<td><code>Rule</code>, <code>Node</code></td>
+<td>the oracle's step, for training</td>
+</tr>
+<tr>
+<td><code>RuleProb</code>, <code>NodeProb</code></td>
+<td>the two distributions</td>
+</tr>
+<tr>
+<td><code>LossRule</code>, <code>LossNode</code></td>
+<td>the two losses</td>
+</tr>
+</tbody>
+</table>
+<p>Wolfram's <code>Information[NetInitialize[net], "ArraysTotalElementCount"]</code> returns <strong>611,468</strong> for the net in <code>nets/tnpolicynet/train/tnPolicyNetFromDiagram.nb</code> (checked 25 November 2026).</p>
+<h2 id="6-using-it-in-wolfram">6. Using it in Wolfram</h2>
+<h3 id="running">Running</h3>
+<pre><code class="language-wolfram">tnSimplify[&quot;(a⨁b)⨂c&quot;, &quot;Expand&quot;]
+tnSimplify[&quot;a⨂c ⨁ b⨂c&quot;, &quot;Factor&quot;]
+tnSimplify[&quot;(a⨁0)⨂𝟙⨂b&quot;, &quot;Simplify&quot;]
+</code></pre>
+<h3 id="reading-the-output">Reading the output</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"Result"</code></td>
+<td>the result as a string</td>
+</tr>
+<tr>
+<td><code>"Tree"</code></td>
+<td>the result's tree; atom slots number the atoms of the result in order of first appearance</td>
+</tr>
+<tr>
+<td><code>"Steps"</code></td>
+<td>each step: <code>"Rule"</code>, <code>"Node"</code> (its preorder position) and <code>"Result"</code></td>
+</tr>
+<tr>
+<td><code>"Method"</code></td>
+<td><code>"Net"</code> or <code>"Oracle"</code></td>
+</tr>
+<tr>
+<td><code>"Complete"</code></td>
+<td>True when the goal's normal form was reached</td>
+</tr>
+<tr>
+<td><code>"Verified"</code></td>
+<td>True when <code>tnEquivalentQ</code> confirms the result</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Try this.</strong> <code>tnSimplify["(a⨁0)⨂𝟙⨂b", "Simplify"]</code> takes five steps to <code>"a ⨂ b"</code>: <code>AssocProd</code> at node 1, <code>DistRight</code> at 1, <code>UnitProd</code> at 4, <code>ZeroProd</code> at 5 and <code>ZeroSum</code> at 1.</p>
+<h3 id="the-public-functions">The public functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tnParse[s]</code>, <code>tnParse[s, Method -&gt; "Net"]</code></td>
+<td>string → tree, atoms, canonical string, prefix and the method used</td>
+</tr>
+<tr>
+<td><code>tnSimplify[s, goal]</code></td>
+<td>goal <code>"Expand"</code>, <code>"Factor"</code> or <code>"Simplify"</code>: the result, every step (rule, node, result) and a verification flag</td>
+</tr>
+<tr>
+<td><code>tnEvaluate[s, dims]</code></td>
+<td>the exact dimension and number of terms, and the value net's estimate; with matrices, the numeric value</td>
+</tr>
+<tr>
+<td><code>tnSolve[s, goal, dims]</code></td>
+<td>all of the above, JSON-ready; <code>dims</code> is an Association</td>
+</tr>
+<tr>
+<td><code>tnAPI</code></td>
+<td>an <code>APIFunction</code> over <code>tnSolve</code>, with parameters <code>expr</code>, <code>goal</code> and <code>dims</code> as the string <code>"a=2,b=3"</code></td>
+</tr>
+<tr>
+<td><code>tnTrainAll[]</code></td>
+<td>generates the data, trains the three nets, writes the log notebook</td>
+</tr>
+<tr>
+<td><code>tnAccuracy[n]</code></td>
+<td>measures the nets against the oracles on n fresh examples</td>
+</tr>
+<tr>
+<td><code>tnSaveNets[]</code>, <code>tnLoadNets[]</code></td>
+<td>the nets to and from the Cloud; <code>tnSaveNets</code> writes nothing unless all three are trained</td>
+</tr>
+<tr>
+<td><code>tnLogSave[]</code></td>
+<td>writes the log notebook</td>
+</tr>
+<tr>
+<td><code>tensorNetsSave[]</code></td>
+<td>the release: saves the public functions and the bundle</td>
+</tr>
+<tr>
+<td><code>tnLex[s]</code></td>
+<td>the lexer: tokens and atoms</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-examples-as-returned-by-the-kernel">The examples, as returned by the kernel</h3>
+<p>Evaluated on 25 November 2026 (Wolfram 15.0) from <code>ff_tensornets_new.nb</code>, with no trained nets loaded:</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tnParse["a ⊗ (b (+) c)"]</code></td>
+<td><code>"String" -&gt; "a ⨂ (b ⨁ c)"</code>, <code>"Prefix" -&gt; {"P", "x1", "S", "x2", "x3"}</code>, <code>"Atoms" -&gt; {"a", "b", "c"}</code>, <code>"Method" -&gt; "Reference"</code></td>
+</tr>
+<tr>
+<td><code>tnLex["(x1 + y)*z^2"]</code></td>
+<td><code>"Tokens" -&gt; {"(", "x1", "+", "x2", ")", "*", "x3", "^", "n2"}</code>, <code>"Atoms" -&gt; {"x1", "y", "z"}</code></td>
+</tr>
+<tr>
+<td><code>tnSimplify["(a⨁b)⨂c", "Expand"]</code></td>
+<td><code>"Result" -&gt; "a ⨂ c ⨁ b ⨂ c"</code>, one step <code>DistRight</code> at node 1, <code>"Verified" -&gt; True</code></td>
+</tr>
+<tr>
+<td><code>tnSimplify["a⨂c ⨁ b⨂c", "Factor"]</code></td>
+<td><code>"Result" -&gt; "(a ⨁ b) ⨂ c"</code>, one step <code>FactorRight</code> at node 1, <code>"Verified" -&gt; True</code></td>
+</tr>
+<tr>
+<td><code>tnSimplify["(a⨁0)⨂𝟙⨂b", "Simplify"]</code></td>
+<td><code>"Result" -&gt; "a ⨂ b"</code> in five steps: <code>AssocProd</code>, <code>DistRight</code>, <code>UnitProd</code>, <code>ZeroProd</code>, <code>ZeroSum</code></td>
+</tr>
+<tr>
+<td><code>tnEvaluate["(V⨁W)^2", &lt;|"V" -&gt; 2, "W" -&gt; 3|&gt;]</code></td>
+<td><code>"Exact" -&gt; &lt;|"Dimension" -&gt; 25, "Terms" -&gt; 4|&gt;</code>, <code>"NetEstimate" -&gt; Missing["NoNet"]</code></td>
+</tr>
+<tr>
+<td><code>tnEvaluate["a⨂b", &lt;|"a" -&gt; {{1,2},{3,4}}, "b" -&gt; {{0,1},{1,0}}|&gt;]</code></td>
+<td><code>"Value" -&gt; {{0,1,0,2},{1,0,2,0},{0,3,0,4},{3,0,4,0}}</code>, the Kronecker product</td>
+</tr>
+<tr>
+<td><code>tnSolve["(a⨁b)⨂(c⨁d)", "Expand", &lt;|"a"-&gt;2, "b"-&gt;3, "c"-&gt;1, "d"-&gt;4|&gt;]</code></td>
+<td><code>"result" -&gt; "a ⨂ c ⨁ a ⨂ d ⨁ b ⨂ c ⨁ b ⨂ d"</code> in 4 steps, <code>"verified" -&gt; True</code>, <code>"dimension" -&gt; 25</code></td>
+</tr>
+<tr>
+<td><code>tnSaveNets[]</code></td>
+<td><code>Failure["NoNets", …]</code>: "No trained nets: run tnTrainAll[] first. Nothing was written."</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rules-of-the-kernel">Rules of the kernel</h3>
+<ul>
+<li><strong>The nets decide; the exact engine executes.</strong> Every rewrite is one of the eleven sound rules, so every result is mathematically correct, whatever the quality of the nets.</li>
+<li><strong>Every result is verified</strong> by <code>tnEquivalentQ</code>: both sides are expanded into words (ordered ⨂-factors) and compared as multisets. ⨁ is commutative up to natural isomorphism; the order of ⨂ is never changed.</li>
+<li><strong>The nets are never trusted alone.</strong> With <code>Method -&gt; Automatic</code>, the exact result is returned whenever a net disagrees, and the disagreement is reported.</li>
+<li><strong>Nothing is printed, and nothing goes to the Cloud</strong> unless you call <code>tnSaveNets[]</code> or <code>tensorNetsSave[]</code>. While the release saves, every symbol in the cell's context that does not belong to the project is blocked.</li>
+</ul>
+<h2 id="7-python">7. Python</h2>
+<p>tnPolicyNet itself runs in Wolfram only, for now. Our own Python code (<code>ccn_nets.nn</code>, <code>ccnlab.nn</code>) has dense layers but no attention yet, so the CCN Net Diagram Editor writes transformer nets for Wolfram only. The paths to Python:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ONNX export from Wolfram 15</td>
+<td>a small dense net has been carried across this way; whether <code>AttentionLayer</code> with <code>"MultiHead"</code> exports cleanly is still to be tested</td>
+</tr>
+<tr>
+<td>Attention in our own Python</td>
+<td>planned, with its gradient check, as for the dense layers</td>
+</tr>
+<tr>
+<td>The lexer, oracles and rule engine</td>
+<td>small, and port directly</td>
+</tr>
+</tbody>
+</table>
+<p>The exact counterpart already exists: <code>python/tensor_parser.py</code> is the Python version of <code>tnLex</code> + <code>tnRefParse</code>, with the same grammar and the same operator spellings, and no dependencies.</p>
+<pre><code class="language-python">&gt;&gt;&gt; import tensor_parser as T
+&gt;&gt;&gt; n = T.parse(&quot;a ⊗ (b (+) c)&quot;)
+&gt;&gt;&gt; T.to_str(n), T.to_prefix(n)
+('a ⨂ (b ⨁ c)', 'TensorProduct[a, DirectSum[b, c]]')
+&gt;&gt;&gt; T.to_str(T.expand(T.parse(&quot;(V⨁W)^2&quot;)))
+'V ⨂ V ⨁ V ⨂ W ⨁ W ⨂ V ⨁ W ⨂ W'
+&gt;&gt;&gt; T.dimension(T.parse(&quot;(V⨁W)^2&quot;), {&quot;V&quot;: 2, &quot;W&quot;: 3})
+25
+&gt;&gt;&gt; T.parse(&quot;(a⨁b&quot;)
+ParseError: Expected RP, got 'end of input' at 4
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Does</th>
+<th>Wolfram counterpart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tokenize(s)</code></td>
+<td>the tokens</td>
+<td><code>tnLex</code></td>
+</tr>
+<tr>
+<td><code>parse(s)</code></td>
+<td>string → tree (<code>Sym</code>, <code>DirectSum</code>, <code>TensorProd</code>); raises <code>ParseError</code></td>
+<td><code>tnRefParse</code></td>
+</tr>
+<tr>
+<td><code>to_str(node)</code>, <code>to_prefix(node)</code></td>
+<td>back to a string; the S-expression form</td>
+<td>the <code>"String"</code> of <code>tnParse</code></td>
+</tr>
+<tr>
+<td><code>expand(node)</code></td>
+<td>⨂ distributed over ⨁</td>
+<td><code>tnSimplify[s, "Expand"]</code>'s result</td>
+</tr>
+<tr>
+<td><code>dimension(node, dims)</code></td>
+<td>the dimension</td>
+<td><code>tnDimension</code></td>
+</tr>
+<tr>
+<td><code>evaluate(node, env)</code></td>
+<td>⨂ → Kronecker product, ⨁ → block-diagonal or concatenation (NumPy)</td>
+<td><code>tnNumeric</code></td>
+</tr>
+</tbody>
+</table>
+<p>The rule engine and <code>tnOracleStep</code> are not in Python yet; <code>tensor_parser.expand</code> gives Expand's normal form directly, without the steps, so it can check any Expand result of the policy.</p>
+<h2 id="8-training-it-yourself">8. Training it yourself</h2>
+<table>
+<thead>
+<tr>
+<th>Way</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The whole system</td>
+<td><code>tnTrainAll[]</code> in <code>ff_tensornets_new.nb</code>: generates the data from the oracles, trains the three nets and writes <code>ff_tensornets_log.nb</code>. Expect an hour or more on a CPU at the defaults</td>
+</tr>
+<tr>
+<td>Measuring</td>
+<td><code>tnAccuracy[n]</code>: the nets against the oracles on n fresh examples</td>
+</tr>
+<tr>
+<td>From the diagram</td>
+<td>open the CCN Net Diagram Editor, Examples ▸ tnPolicyNet, change it and generate a Wolfram notebook. <code>nets/tnpolicynet/train/tnPolicyNetFromDiagram.nb</code> is that notebook: the diagram, the parts, the net, Wolfram's count (611,468) and a <code>NetTrain</code> cell for your own <code>trainData</code> (Adam, learning rate 0.005, L2 10⁻⁴, batches of 64, 12 rounds, seed 1234)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The data.</strong> Random expressions, each walked to its goal by the oracle; every step (goal, expression, rule, node) is one training example.</p>
+<h2 id="9-results">9. Results</h2>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The test notebook (22 of 22 pass)</td>
+<td>Expand and Factor soundness; the order of ⨂ kept; net-driven Expand always complete and verified; net-driven Factor and Simplify always verified; Factor never longer than its input</td>
+</tr>
+<tr>
+<td>Full size (d = 128)</td>
+<td><strong>not yet trained</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Because moves are chosen only among legal ones and every result is verified, a weak policy can make a simplification longer to find, but never wrong.</p>
+<h2 id="10-a-complete-worked-session">10. A complete worked session</h2>
+<pre><code class="language-wolfram">(* evaluate the one cell of ff_tensornets_new.nb first *)
+p = tnParse[&quot;(a⨁b)⨂c&quot;]
+(* &lt;|&quot;Tree&quot; -&gt; tnP[tnS[tnX[1], tnX[2]], tnX[3]], &quot;Atoms&quot; -&gt; {&quot;a&quot;, &quot;b&quot;, &quot;c&quot;}, &quot;String&quot; -&gt; &quot;(a ⨁ b) ⨂ c&quot;,
+     &quot;Prefix&quot; -&gt; {&quot;P&quot;, &quot;S&quot;, &quot;x1&quot;, &quot;x2&quot;, &quot;x3&quot;}, &quot;Method&quot; -&gt; &quot;Reference&quot;, &quot;NetAgreesWithReference&quot; -&gt; Missing[&quot;NoNet&quot;]|&gt; *)
+
+e = tnSimplify[&quot;(a⨁b)⨂c&quot;, &quot;Expand&quot;]
+(* &lt;|&quot;Input&quot; -&gt; &quot;(a ⨁ b) ⨂ c&quot;, &quot;Goal&quot; -&gt; &quot;Expand&quot;, &quot;Result&quot; -&gt; &quot;a ⨂ c ⨁ b ⨂ c&quot;,
+     &quot;Tree&quot; -&gt; tnS[tnP[tnX[1], tnX[3]], tnP[tnX[2], tnX[3]]],
+     &quot;Steps&quot; -&gt; {&lt;|&quot;Rule&quot; -&gt; &quot;DistRight&quot;, &quot;Node&quot; -&gt; 1, &quot;Result&quot; -&gt; &quot;a ⨂ c ⨁ b ⨂ c&quot;|&gt;},
+     &quot;Method&quot; -&gt; &quot;Oracle&quot;, &quot;Complete&quot; -&gt; True, &quot;Verified&quot; -&gt; True|&gt; *)
+
+f = tnSimplify[e[&quot;Result&quot;], &quot;Factor&quot;][&quot;Result&quot;]            (* &quot;(a ⨁ b) ⨂ c&quot;: back where we started *)
+
+tnEvaluate[&quot;(V⨁W)^2&quot;, &lt;|&quot;V&quot; -&gt; 2, &quot;W&quot; -&gt; 3|&gt;]
+(* &lt;|&quot;Exact&quot; -&gt; &lt;|&quot;Dimension&quot; -&gt; 25, &quot;Terms&quot; -&gt; 4|&gt;, &quot;NetEstimate&quot; -&gt; Missing[&quot;NoNet&quot;]|&gt; *)
+
+tnSolve[&quot;(a⨁b)⨂(c⨁d)&quot;, &quot;Expand&quot;, &lt;|&quot;a&quot; -&gt; 2, &quot;b&quot; -&gt; 3, &quot;c&quot; -&gt; 1, &quot;d&quot; -&gt; 4|&gt;][&quot;steps&quot;]
+(* {&quot;DistRight @1 → a ⨂ (c ⨁ d) ⨁ b ⨂ (c ⨁ d)&quot;, &quot;DistLeft @2 → a ⨂ c ⨁ a ⨂ d ⨁ b ⨂ (c ⨁ d)&quot;,
+    &quot;AssocSum @1 → a ⨂ c ⨁ a ⨂ d ⨁ b ⨂ (c ⨁ d)&quot;, &quot;DistLeft @9 → a ⨂ c ⨁ a ⨂ d ⨁ b ⨂ c ⨁ b ⨂ d&quot;} *)
+</code></pre>
+<p>For tnPolicyNet, read the <code>"Steps"</code>: each is a rule and a node chosen from the legal pairs. With no net loaded the oracle chose (<code>"Method" -&gt; "Oracle"</code>); after <code>tnTrainAll[]</code> the net chooses, and the result is still verified.</p>
+<h2 id="11-messages-you-may-see">11. Messages you may see</h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Failure["NoNets", …]</code> from <code>tnSaveNets[]</code></td>
+<td>no trained nets</td>
+<td>run <code>tnTrainAll[]</code> first; nothing was written</td>
+</tr>
+<tr>
+<td><code>Failure["ParseError", …]</code>: "Expected ) at token 5, got EOF"</td>
+<td>a parenthesis is not closed</td>
+<td>close it</td>
+</tr>
+<tr>
+<td><code>"NetEstimate" -&gt; Missing["NoNet"]</code>, <code>"NetAgreesWithReference" -&gt; Missing["NoNet"]</code></td>
+<td>the nets are not trained or loaded; the exact result is given</td>
+<td><code>tnTrainAll[]</code> or <code>tnLoadNets[]</code></td>
+</tr>
+<tr>
+<td><code>"Method" -&gt; "Oracle"</code> or <code>"Reference"</code></td>
+<td>the exact engine answered</td>
+<td>normal without nets, or when a net disagreed</td>
+</tr>
+<tr>
+<td><code>tnSolve</code>'s <code>"dimension"</code> comes back as an unevaluated <code>tnDimension[…, "a=2,b=3"]</code></td>
+<td><code>dims</code> was given as a string</td>
+<td>give an Association, <code>&lt;|"a" -&gt; 2, "b" -&gt; 3|&gt;</code>; the string form is for <code>tnAPI</code></td>
+</tr>
+<tr>
+<td>Python <code>ParseError: Expected RP, got 'end of input'</code></td>
+<td>as above, in Python</td>
+<td>close the parenthesis</td>
+</tr>
+</tbody>
+</table>
+<h2 id="12-quick-reference-card">12. Quick reference card</h2>
+<pre><code>WOLFRAM (evaluate ff_tensornets_new.nb)            PYTHON (python/tensor_parser.py)
+tnParse[s]   tnParse[s, Method -&gt; &quot;Net&quot;]           T.parse(s)  T.to_str(n)  T.to_prefix(n)
+tnSimplify[s, &quot;Expand&quot; | &quot;Factor&quot; | &quot;Simplify&quot;]    T.expand(n)
+tnEvaluate[s, &lt;|&quot;a&quot; -&gt; 2|&gt;]                         T.dimension(n, {&quot;a&quot;: 2})  T.evaluate(n, env)
+tnSolve[s, goal, dims]   tnAPI (dims &quot;a=2,b=3&quot;)
+tnTrainAll[]  tnAccuracy[n]  tnSaveNets[]  tnLoadNets[]  tnLogSave[]
+
+tnPolicyNet  goal + 22 prefix tokens → 128 → 3 encoder blocks (4 heads, FF 512 GELU)
+             → rule head (11) and node head (per position) · 611,468 numbers · oracle tnOracleStep
+RULES  ZeroSum ZeroProd UnitProd PowerExpand DistRight DistLeft AssocSum AssocProd
+       FactorLeft FactorRight PowerFold          GOALS  Expand  Factor  Simplify
+</code></pre>
+<h2 id="13-files">13. Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ff_tensornets_new.nb</code></td>
+<td>the current code: every function in one cell</td>
+</tr>
+<tr>
+<td><code>ff_tensornets_test.nb</code>, <code>ff_tensornets_new_testlog.nb</code></td>
+<td>the tests (22 of 22 pass) and their latest results</td>
+</tr>
+<tr>
+<td><code>ff_tensornets_smallnets.nb</code></td>
+<td>small development nets (wiring checks only)</td>
+</tr>
+<tr>
+<td><code>DESIGN-tensornets.md</code> (and <code>.pdf</code>)</td>
+<td>the design, with Appendix A explaining each term</td>
+</tr>
+<tr>
+<td><code>unit1_seq2seq.nb</code> … <code>unit4_build_your_own.nb</code>, <code>docs/units/</code></td>
+<td>the four units of learning the nets are built from</td>
+</tr>
+<tr>
+<td><code>nets/tnpolicynet/</code></td>
+<td>the Net Lab folder: <code>net.json</code> (the diagram), <code>card.json</code>, <code>writeup.md</code>, <code>train/tnPolicyNetFromDiagram.nb</code>, <code>runs/</code>, this guide</td>
+</tr>
+<tr>
+<td><code>python/tensor_parser.py</code></td>
+<td>the Python parser and exact counterpart</td>
+</tr>
+</tbody>
+</table>
+<h2 id="14-credits-copyright-and-licence">14. Credits, copyright and licence</h2>
+<p>By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
+AI System Programming Group</p>
+<p>Follows Sutskever, Vinyals and Le (2014), Lample and Charton (2019), Vaswani et al. (2017) and Silver et al. (2016) for the policy and value nets, as cited in <code>DESIGN-tensornets.md</code>.</p>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p></main><footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>

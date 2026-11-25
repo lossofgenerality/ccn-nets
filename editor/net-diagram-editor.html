@@ -610,7 +610,7 @@ ccnDecBlock[d_, h_, dff_, act_] := NetGraph[<|"self" -> ccnMHA[d, h, "Causal"], 
 ccnEncoder[d_, h_, dff_, act_, nL_] := NetChain[Table[ccnEncBlock[d, h, dff, act], nL]];
 ccnDecoder[d_, h_, dff_, act_, nL_] := NetGraph[Association@Table["b" <> ToString[i] -> ccnDecBlock[d, h, dff, act], {i, nL}],
    Join[{NetPort["Input"] -> NetPort["b1", "Input"]}, Table[NetPort["Memory"] -> NetPort["b" <> ToString[i], "Memory"], {i, nL}],
-    Table["b" <> ToString[i - 1] -> NetPort["b" <> ToString[i], "Input"], {i, 2, L}]]];
+    Table["b" <> ToString[i - 1] -> NetPort["b" <> ToString[i], "Input"], {i, 2, nL}]]];
 
 (* Fixed sinusoidal positions (Unit 4): sin(position \\[Times] frequency + phase), added to the embedding *)
 ccnSinusoid[d_] := NetGraph[<|"idx" -> SequenceIndicesLayer[], "pos" -> ElementwiseLayer[# - 1. &], "col" -> ReplicateLayer[1, 2],

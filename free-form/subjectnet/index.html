@@ -39,13 +39,24 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 .card p{margin:0 0 10px;color:var(--soft);font-size:15px}
 .tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
 @media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.guide{max-width:980px;display:block}
+.guide td:last-child{text-align:left;white-space:normal}
+.guide th{text-align:left;border-bottom:2px solid var(--line);padding:7px 4px}
+.guide table{margin:10px 0 18px;display:block;overflow-x:auto}
+.guide h2{font-size:24px;margin:34px 0 10px;padding-top:10px;border-top:1px solid var(--line)}
+.guide h3{font-size:19px;margin:22px 0 8px}
+.guide p,.guide li{max-width:78ch}
+.guide pre{background:#0a2540;color:#e8f1f8;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:14px;line-height:1.45}
+.guide code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.guide p code,.guide td code,.guide li code{background:#e8edf3;padding:1px 4px;border-radius:3px}
+.guide .katex-display{overflow-x:auto;overflow-y:hidden}
 </style></head><body>
 <header class="top">
 <p class="crumb"><a href="../../">CCN Nets</a> · CCN agent free-form language</p>
 <h1>SubjectNet</h1>
 <p class="lede">Decides whether a motion part of a sentence is about the object being moved (&quot;the drone should rise 4 metres&quot;) or about something else (&quot;Mia turned to her brother&quot;), so that the motion reader keeps only the right parts.</p>
 <div class="stats"><div class="stat"><b>65,634</b><span>numbers in the net</span></div><div class="stat"><b>99.5%</b><span>templates with unseen words, accuracy</span></div><div class="stat"><b>21 of 24</b><span>hard sentences, accuracy</span></div><div class="stat"><b>12 of 12 (without the check: 9)</b><span>paragraphs right step by step</span></div><div class="stat"><b>0.75 s</b><span>training on a CPU</span></div></div>
-<div class="actions"><a class="btn" href="3d.html">Fly through it in 3D</a><a class="btn alt" href="../../editor/net-diagram-editor.html?example=subjectnet">Open its diagram</a><a class="btn alt" href="#downloads">Downloads</a></div>
+<div class="actions"><a class="btn" href="guide.html">Read the user guide</a><a class="btn" href="3d.html">Fly through it in 3D</a><a class="btn alt" href="../../editor/net-diagram-editor.html?example=subjectnet">Open its diagram</a><a class="btn alt" href="#downloads">Downloads</a></div>
 </header>
 <main class="band">
 

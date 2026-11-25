@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>owNet · User guide · CCN Nets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--ink:#10253d;--soft:#4b5f75;--line:#d6dee7;--deep:#0a2540;--sky:#8fd3ff;--accent:#ff5c8a;--card:#fff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:#0b5a9a}
+.top{background:var(--deep);color:#f2f7fb;padding:clamp(24px,4vw,52px) max(5vw,16px) 30px}
+.top a{color:var(--sky)}
+.crumb{font-size:14px;margin:0 0 14px}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.lede{color:#c9dbeb;max-width:68ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px}
+.stat{border-top:2px solid var(--sky);padding-top:8px}
+.stat b{display:block;font-size:clamp(24px,3vw,32px);font-weight:600;line-height:1.1}
+.stat span{font-size:14px;color:#c9dbeb}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:transparent;border:1px solid var(--sky);color:var(--sky)}
+.band{padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;gap:28px;max-width:1240px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-size:22px;font-weight:600;margin:0 0 10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig svg{width:100%;height:auto;display:block}
+img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.write h2{font-size:19px;margin-top:22px}
+.write p{max-width:72ch}
+ul.files{padding-left:1.1em;margin:0}
+.prov{font-size:14px;color:var(--soft)}
+footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card h3{margin:0 0 6px;font-size:20px}
+.card p{margin:0 0 10px;color:var(--soft);font-size:15px}
+.tag{display:inline-block;font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:12px;padding:1px 9px}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.guide{max-width:980px;display:block}
+.guide td:last-child{text-align:left;white-space:normal}
+.guide th{text-align:left;border-bottom:2px solid var(--line);padding:7px 4px}
+.guide table{margin:10px 0 18px;display:block;overflow-x:auto}
+.guide h2{font-size:24px;margin:34px 0 10px;padding-top:10px;border-top:1px solid var(--line)}
+.guide h3{font-size:19px;margin:22px 0 8px}
+.guide p,.guide li{max-width:78ch}
+.guide pre{background:#0a2540;color:#e8f1f8;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:14px;line-height:1.45}
+.guide code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.guide p code,.guide td code,.guide li code{background:#e8edf3;padding:1px 4px;border-radius:3px}
+.guide .katex-display{overflow-x:auto;overflow-y:hidden}
+</style><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+ onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true}],throwOnError:false})"></script>
+</head><body>
+<main class="band guide"><p class="crumb"><a href="../../">CCN Nets</a> · Tensor algebras (TensorNets) · <a href="./">owNet</a></p><h1 id="ownet-user-guide">owNet: User Guide</h1>
+<p><em>A small transformer that expands ⨂/⨁ expressions, checked by an exact oracle, in Wolfram, with its Python counterparts</em></p>
+<p>Computational Classnotes · 25 November 2026</p>
+<p><strong>Companion to:</strong> the TensorNets units of learning (Unit 4 · Building Our Own Net) and the CCN Net Lab catalogue (https://lossofgenerality.github.io/ccn-nets/tensor-algebras/ownet/)</p>
+<p><strong>Files covered:</strong> <code>unit4_build_your_own.nb</code>, <code>unit4_build_your_own_nets.nb</code>, <code>docs/units/04-build-your-own.md</code>, <code>nets/ownet/train/owNetFromDiagram.nb</code>, <code>python/tensor_parser.py</code></p>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p>
+<h2 id="contents">Contents</h2>
+<ol>
+<li>What it is</li>
+<li>Before you start</li>
+<li>Finding your way around</li>
+<li>The mathematics</li>
+<li>The configuration, part by part</li>
+<li>Using it in Wolfram</li>
+<li>Python</li>
+<li>Training it yourself</li>
+<li>Results</li>
+<li>A complete worked session</li>
+<li>Messages you may see</li>
+<li>Quick reference card</li>
+<li>Files</li>
+<li>Credits, copyright and licence</li>
+</ol>
+<hr />
+<h2 id="1-what-it-is">1. What it is</h2>
+<p>Given an expression such as (a⨁b)⨂c, owNet writes its expansion a⨂c ⨁ b⨂c. ⨂ is the tensor product and ⨁ the direct sum; ⨂ binds tighter than ⨁, distributes over it on both sides, and is not commutative.</p>
+<p>owNet is an encoder–decoder transformer made small: d = 32, 4 heads, a feed-forward width of 128, and 2 encoder and 2 decoder layers. It has <strong>59,950 numbers</strong>: 59,722 learnt and 228 fixed. It reads infix tokens and writes prefix tokens. Every answer is checked by an exact oracle, so a wrong answer is never accepted.</p>
+<p>It is the net of <strong>Unit 4</strong> of the TensorNets units, where it is built from the parts of Units 1–3. In the notebooks its symbol is <code>ownNet</code>; the catalogue calls it owNet. The superseded <code>lesson4_build_your_own.nb</code> holds an earlier net of the same design as <code>owNet</code>, decoded with <code>owBeam</code>.</p>
+<h2 id="2-before-you-start">2. Before you start</h2>
+<h3 id="what-you-need">What you need</h3>
+<table>
+<thead>
+<tr>
+<th>For</th>
+<th>You need</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wolfram</td>
+<td>Wolfram 14 or later (the numbers here are from Wolfram 15.0, CPU). Nothing else.</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>Python 3.9 or later. NumPy only for <code>tensor_parser.evaluate</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="opening-it">Opening it</h3>
+<ol>
+<li>Open <code>unit4_build_your_own.nb</code> and choose Evaluation ▸ Quit Kernel ▸ Local.</li>
+<li>Either evaluate it from top to bottom (training in §6 takes about four minutes), or evaluate §1 (the toolkit) and then <code>unit4_build_your_own_nets.nb</code>, which restores the trained net as <code>ownNet</code> without training.</li>
+</ol>
+<p>Nothing is written to the Wolfram Cloud. The notebook is saved with its outputs, so it can be read without running it.</p>
+<h2 id="3-finding-your-way-around">3. Finding your way around</h2>
+<p><code>unit4_build_your_own.nb</code> and its write-up <code>docs/units/04-build-your-own.md</code> have the same section numbers:</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>the toolkit: vocabulary, sampler, oracle, the net's parts, training and decoding</td>
+</tr>
+<tr>
+<td>2</td>
+<td>the task: expand</td>
+</tr>
+<tr>
+<td>3</td>
+<td>the data: uniform binary trees</td>
+</tr>
+<tr>
+<td>4</td>
+<td>the oracle: words</td>
+</tr>
+<tr>
+<td>5</td>
+<td>the net, assembled from Unit 3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>training</td>
+</tr>
+<tr>
+<td>7</td>
+<td>decoding and checking</td>
+</tr>
+<tr>
+<td>8</td>
+<td>where the net goes wrong</td>
+</tr>
+<tr>
+<td>9</td>
+<td>saving the net</td>
+</tr>
+<tr>
+<td>10</td>
+<td>exercises, with answers</td>
+</tr>
+<tr>
+<td>11</td>
+<td>summary</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-the-mathematics">4. The mathematics</h2>
+<h3 id="the-task">The task</h3>
+<div class="math">$$
+(A\oplus B)\otimes C=A\otimes C\ \oplus\ B\otimes C,\qquad A\otimes(B\oplus C)=A\otimes B\ \oplus\ A\otimes C .
+$$</div>
+<h3 id="the-oracle">The oracle</h3>
+<p>An expression is a list of <em>words</em>, ordered ⨂-products of atoms:</p>
+<div class="math">$$
+\mathrm{words}(x)=\{x\},\quad \mathrm{words}(A\oplus B)=\mathrm{words}(A)\cup\mathrm{words}(B),\quad
+\mathrm{words}(A\otimes B)=\{\,uv : u\in\mathrm{words}(A),\ v\in\mathrm{words}(B)\,\}.
+$$</div>
+<p>Two expressions are equal when their lists of words agree up to order. For (a⨁b)⨂(c⨁d) the words are {ac, ad, bc, bd}.</p>
+<h3 id="the-net">The net</h3>
+<p>Each token is embedded (d = 32), scaled by √d and given sinusoidal positions,</p>
+<div class="math">$$
+\mathrm{PE}(p,2i)=\sin\!\left(p/10000^{2i/d}\right),\qquad \mathrm{PE}(p,2i+1)=\cos\!\left(p/10000^{2i/d}\right).
+$$</div>
+<p>Each attention head computes</p>
+<div class="math">$$
+\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\!\left(\frac{QK^{\mathsf T}}{\sqrt{d_k}}\right)V,\qquad d_k=d/h=8,
+$$</div>
+<p>with a causal mask in the decoder's self-attention. Every sub-layer is wrapped as LayerNorm(x + Sublayer(x)). The output layer shares its weights with the two embeddings.</p>
+<h3 id="the-loss">The loss</h3>
+<p>The target is label-smoothed with ε = 0.1 over the 10 tokens: 0.91 on the right token and 0.01 on each other. The loss is the cross-entropy against it, so its floor is the entropy of the smoothed target:</p>
+<div class="math">$$
+-(0.91\ln 0.91+9\times0.01\ln0.01)=0.500 .
+$$</div>
+<h3 id="the-decoding">The decoding</h3>
+<p>Beam search with the length penalty ((5 + |y|)/6)^α, α = 0.6, optionally constrained by the prefix grammar: a counter of subtrees still owed allows <code>&lt;/s&gt;</code> only when the tree is complete.</p>
+<h2 id="5-the-configuration-part-by-part">5. The configuration, part by part</h2>
+<p>The vocabulary has 10 tokens: <code>&lt;s&gt;</code>, <code>&lt;/s&gt;</code>, a, b, c, d, ⨂, ⨁, (, ).</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Numbers</th>
+<th>Learnt?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>one attention layer: 4 × (32² + 32)</td>
+<td>4,224</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>one feed-forward layer: 32·128 + 128 + 128·32 + 32</td>
+<td>8,352</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>one LayerNorm: 2 × 32</td>
+<td>64</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>encoder layer: attention + feed-forward + 2 LayerNorms</td>
+<td>12,704</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>decoder layer: 2 attentions + feed-forward + 3 LayerNorms</td>
+<td>16,992</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>2 encoder + 2 decoder layers</td>
+<td>59,392</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>the shared embedding, 10 × 32</td>
+<td>320</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>output biases</td>
+<td>10</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>label smoothing table, 10 × 10</td>
+<td>100</td>
+<td>fixed</td>
+</tr>
+<tr>
+<td>the two sinusoidal position layers</td>
+<td>128</td>
+<td>fixed</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>59,950</strong> (59,722 learnt, 228 fixed)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Wolfram's <code>Information[NetInitialize[net], "ArraysTotalElementCount"]</code> returns 59,950 for the net in <code>nets/ownet/train/owNetFromDiagram.nb</code> (checked 25 November 2026).</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data</td>
+<td>uniform binary trees with 1–5 operators over a, b, c, d; source ≤ 25 tokens, target ≤ 40</td>
+</tr>
+<tr>
+<td>Pairs</td>
+<td>12,000 training, 100 test; no test source in training</td>
+</tr>
+<tr>
+<td>Optimiser</td>
+<td>Adam, β₂ = 0.98, the warm-up schedule of Unit 3 with 400 warm-up steps</td>
+</tr>
+<tr>
+<td>Batch, rounds</td>
+<td>64, 40</td>
+</tr>
+<tr>
+<td>Label smoothing</td>
+<td>ε = 0.1</td>
+</tr>
+<tr>
+<td>Decoding</td>
+<td>greedy; beam 4, α = 0.6; beam 4 + prefix grammar</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-using-it-in-wolfram">6. Using it in Wolfram</h2>
+<h3 id="running">Running</h3>
+<p>After §1 and <code>unit4_build_your_own_nets.nb</code>:</p>
+<pre><code class="language-wolfram">First@First@beamSearch[ownNet, Characters[&quot;(a⨁b)⨂c&quot;], 4, True]
+(* {&quot;⨁&quot;, &quot;⨂&quot;, &quot;a&quot;, &quot;c&quot;, &quot;⨂&quot;, &quot;b&quot;, &quot;c&quot;} *)
+</code></pre>
+<h3 id="the-functions-all-in-1">The functions (all in §1)</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>beamSearch[net, src, width, grammar, α:0.6, maxLen:42]</code></td>
+<td>decodes a list of source tokens; returns {prefix tokens, score} pairs, best first. <code>grammar</code> True uses the prefix grammar</td>
+</tr>
+<tr>
+<td><code>parseT[tokens]</code></td>
+<td>prefix tokens → tree, or <code>$Failed</code> if they are not a tree</td>
+</tr>
+<tr>
+<td><code>infix[tree]</code></td>
+<td>tree → infix tokens with the fewest parentheses</td>
+</tr>
+<tr>
+<td><code>words[tree]</code></td>
+<td>the oracle's list of words</td>
+</tr>
+<tr>
+<td><code>expand[tree]</code></td>
+<td>the oracle's expansion</td>
+</tr>
+<tr>
+<td><code>equivalentQ[tree, tokens]</code></td>
+<td>True if the prefix tokens are a tree with the same words</td>
+</tr>
+<tr>
+<td><code>randomPrefix[n]</code>, <code>binaryTree[n]</code></td>
+<td>a uniform random tree with n operators (Unit 2, Algorithm 1)</td>
+</tr>
+<tr>
+<td><code>makePair[]</code></td>
+<td>one training pair</td>
+</tr>
+<tr>
+<td><code>model[s]</code>, <code>train[s, pairs]</code>, <code>trainRate[step, s]</code></td>
+<td>the net from settings s, its training, the warm-up schedule</td>
+</tr>
+<tr>
+<td><code>encoderLayerNet</code>, <code>decoderLayerNet</code>, <code>mhaNet</code>, <code>ffnNet</code>, <code>peNet</code></td>
+<td>the parts, from Unit 3</td>
+</tr>
+<tr>
+<td><code>allowed[prefix, grammar]</code>, <code>need[prefix]</code></td>
+<td>the grammar: tokens allowed next, subtrees still owed</td>
+</tr>
+<tr>
+<td><code>saveNet[net, file]</code></td>
+<td>writes the net into its own notebook as <code>ownNet = Uncompress["…"];</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="reading-the-output">Reading the output</h3>
+<p><code>beamSearch</code> returns a list of {tokens, score} pairs. <code>First@First@</code> takes the tokens of the best. The tokens are in prefix (Polish) form: <code>⨁ ⨂ a c ⨂ b c</code> is ⨁(⨂(a, c), ⨂(b, c)) = a⨂c ⨁ b⨂c.</p>
+<h3 id="examples-all-returned-by-the-kernel">Examples (all returned by the kernel)</h3>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>beamSearch[ownNet, Characters["(a⨁b)⨂c"], 4, True]</code>, best</td>
+<td><code>⨁ ⨂ a c ⨂ b c</code></td>
+</tr>
+<tr>
+<td>the net on a⨂(b⨁c)</td>
+<td><code>⨁ ⨂ a b ⨂ a c</code>, which the oracle accepts</td>
+</tr>
+<tr>
+<td><code>words</code> of (a⨁b)⨂(c⨁d)</td>
+<td>{ac, ad, bc, bd}; its expansion has 15 prefix tokens from a source of 11</td>
+</tr>
+<tr>
+<td><code>need</code> after <code>⨁ a</code>, after <code>⨁ a b</code></td>
+<td>1, 0</td>
+</tr>
+<tr>
+<td><code>equivalentQ</code> of a⨂c ⨁ b⨂c in either order; of c⨂a ⨁ c⨂b</td>
+<td>True; False (the order of factors matters)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Try this.</strong> Expand a⨂(b⨁c)⨂d by hand, then ask the net. The words are {abd, acd}.</p>
+<h3 id="rules-of-the-kernel">Rules of the kernel</h3>
+<ul>
+<li>The net decides; the oracle checks. An answer that fails <code>equivalentQ</code> is never accepted.</li>
+<li>With the grammar on, every answer is a valid tree.</li>
+<li>The notebook prints nothing it does not compute, and writes nothing to the Cloud.</li>
+</ul>
+<h2 id="7-python">7. Python</h2>
+<p>owNet itself runs in Wolfram only, for now. Our own Python code (<code>ccn_nets.nn</code>, <code>ccnlab.nn</code>) has dense layers but no attention yet, so the CCN Net Diagram Editor writes transformer nets for Wolfram only. The paths to Python are:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ONNX export from Wolfram 15</td>
+<td>a small dense net has been carried across this way; whether <code>AttentionLayer</code> with <code>"MultiHead"</code> exports cleanly is still to be tested</td>
+</tr>
+<tr>
+<td>Attention in our own Python</td>
+<td>planned, with its gradient check, as for the dense layers</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>oracle</strong> side already exists in Python: <code>python/tensor_parser.py</code> parses the same notation (and more spellings) and expands it, with no dependencies.</p>
+<pre><code class="language-python">&gt;&gt;&gt; import tensor_parser as T
+&gt;&gt;&gt; n = T.parse(&quot;(a⨁b)⨂c&quot;)
+&gt;&gt;&gt; T.to_str(n), T.to_prefix(n), T.to_str(T.expand(n))
+('(a ⨁ b) ⨂ c', 'TensorProduct[DirectSum[a, b], c]', 'a ⨂ c ⨁ b ⨂ c')
+&gt;&gt;&gt; T.to_str(T.expand(T.parse(&quot;a ⊗ (b (+) c)&quot;)))
+'a ⨂ b ⨁ a ⨂ c'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parse(text)</code></td>
+<td>string → tree (<code>Sym</code>, <code>DirectSum</code>, <code>TensorProd</code>); raises <code>ParseError</code></td>
+</tr>
+<tr>
+<td><code>to_str(node)</code>, <code>to_prefix(node)</code></td>
+<td>back to a string; the S-expression form</td>
+</tr>
+<tr>
+<td><code>expand(node)</code></td>
+<td>⨂ distributed over ⨁: the oracle's expansion</td>
+</tr>
+<tr>
+<td><code>dimension(node, dims)</code></td>
+<td>the dimension, given each atom's</td>
+</tr>
+<tr>
+<td><code>evaluate(node, env)</code></td>
+<td>⨂ → Kronecker product, ⨁ → block-diagonal or concatenation (NumPy)</td>
+</tr>
+</tbody>
+</table>
+<p>So a Python program can already check owNet's answers: an answer is right when <code>expand</code> of the source and of the answer have the same terms, in any order of ⨁ and the same order of ⨂.</p>
+<h2 id="8-training-it-yourself">8. Training it yourself</h2>
+<table>
+<thead>
+<tr>
+<th>Way</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit 4</td>
+<td>evaluate <code>unit4_build_your_own.nb</code> from top to bottom; §6 trains (208 s in the recorded run), §9 saves</td>
+</tr>
+<tr>
+<td>From the diagram</td>
+<td>open the CCN Net Diagram Editor, Examples ▸ owNet, and generate a Wolfram notebook. <code>nets/ownet/train/owNetFromDiagram.nb</code> is that notebook: the diagram, the parts, the net, Wolfram's count (59,950) and a training cell for your own <code>trainData</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="9-results">9. Results</h2>
+<p>Recorded in Unit 4 (Wolfram 15.0, CPU; 100 test sources):</p>
+<table>
+<thead>
+<tr>
+<th>Decoding</th>
+<th>Valid prefix</th>
+<th>Same tokens as the oracle</th>
+<th>Top answer verified</th>
+<th>Any in beam verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>greedy</td>
+<td>100 %</td>
+<td>86 %</td>
+<td>86 %</td>
+<td>86 %</td>
+</tr>
+<tr>
+<td>beam 4, α = 0.6</td>
+<td>100 %</td>
+<td>84 %</td>
+<td>84 %</td>
+<td>94 %</td>
+</tr>
+<tr>
+<td>beam 4 + prefix grammar</td>
+<td>100 %</td>
+<td>87 %</td>
+<td>87 %</td>
+<td><strong>97 %</strong></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Training</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>time</td>
+<td>208 s</td>
+</tr>
+<tr>
+<td>loss, first and last round</td>
+<td>1.509, 0.508</td>
+</tr>
+<tr>
+<td>floor (label smoothing)</td>
+<td>0.5003</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Target length</th>
+<th>Test sources</th>
+<th>Top answer verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1–10 tokens</td>
+<td>66</td>
+<td>89.4 %</td>
+</tr>
+<tr>
+<td>11–20 tokens</td>
+<td>31</td>
+<td>87.1 %</td>
+</tr>
+<tr>
+<td>21–40 tokens</td>
+<td>3</td>
+<td>33.3 %</td>
+</tr>
+</tbody>
+</table>
+<p>A single wrong token spoils a whole expansion, so long targets are harder. Only 3 test targets are longer than 20 tokens, so the last figure is uncertain.</p>
+<h2 id="10-a-complete-worked-session">10. A complete worked session</h2>
+<pre><code class="language-wolfram">(* §1 of unit4_build_your_own.nb, then unit4_build_your_own_nets.nb *)
+src = Characters[&quot;(a⨁b)⨂c&quot;]                  (* {&quot;(&quot;, &quot;a&quot;, &quot;⨁&quot;, &quot;b&quot;, &quot;)&quot;, &quot;⨂&quot;, &quot;c&quot;} *)
+hyps = beamSearch[ownNet, src, 4, True];      (* up to 4 {tokens, score}, best first *)
+best = First@First@hyps                       (* {&quot;⨁&quot;, &quot;⨂&quot;, &quot;a&quot;, &quot;c&quot;, &quot;⨂&quot;, &quot;b&quot;, &quot;c&quot;} *)
+tree = parseT[best]                           (* {&quot;⨁&quot;, {&quot;⨂&quot;, &quot;a&quot;, &quot;c&quot;}, {&quot;⨂&quot;, &quot;b&quot;, &quot;c&quot;}} *)
+equivalentQ[parseT[{&quot;⨂&quot;, &quot;⨁&quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;}], best]   (* True: accepted *)
+</code></pre>
+<p>The same check in Python:</p>
+<pre><code class="language-python">import tensor_parser as T
+terms = lambda s: sorted(map(str, T.expand(T.parse(s)).args))   # the words, order of ⨁ free
+terms(&quot;(a⨁b)⨂c&quot;) == terms(&quot;b⨂c⨁a⨂c&quot;)      # True:  accepted
+terms(&quot;(a⨁b)⨂c&quot;) == terms(&quot;c⨂a⨁c⨂b&quot;)      # False: the order of ⨂ matters
+</code></pre>
+<h2 id="11-messages-you-may-see">11. Messages you may see</h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ownNet</code> returned unevaluated</td>
+<td>the net is not loaded</td>
+<td>evaluate §1, then <code>unit4_build_your_own_nets.nb</code></td>
+</tr>
+<tr>
+<td><code>parseT</code> gives <code>$Failed</code></td>
+<td>the tokens are not a complete prefix tree</td>
+<td>decode with <code>grammar</code> True</td>
+</tr>
+<tr>
+<td><code>equivalentQ</code> gives False</td>
+<td>the answer is wrong; take the next in the beam</td>
+<td>use a beam of 4</td>
+</tr>
+<tr>
+<td>Python <code>ParseError: Expected RP, got 'end of input'</code></td>
+<td>a parenthesis is not closed</td>
+<td>close it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="12-quick-reference-card">12. Quick reference card</h2>
+<pre><code>WOLFRAM (unit4_build_your_own.nb §1, then unit4_build_your_own_nets.nb)
+beamSearch[ownNet, Characters[&quot;(a⨁b)⨂c&quot;], 4, True]   best first {tokens, score}
+parseT[tokens]  infix[tree]  words[tree]  expand[tree]  equivalentQ[tree, tokens]
+
+PYTHON (python/tensor_parser.py, the oracle side)
+T.parse(s)  T.expand(n)  T.to_str(n)  T.to_prefix(n)  T.dimension(n, dims)  T.evaluate(n, env)
+
+NET  10 tokens; d 32, 4 heads, FF 128 ReLU; 2 + 2 layers; shared embedding
+     59,950 numbers (59,722 learnt, 228 fixed); label smoothing 0.1; Adam, warm-up 400
+     97 % of unseen sources solved (beam 4 + grammar + oracle)
+</code></pre>
+<h2 id="13-files">13. Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unit4_build_your_own.nb</code></td>
+<td>Unit 4: toolkit, data, oracle, net, training, decoding, results</td>
+</tr>
+<tr>
+<td><code>unit4_build_your_own_nets.nb</code></td>
+<td>the trained net, <code>ownNet = Uncompress["…"];</code></td>
+</tr>
+<tr>
+<td><code>docs/units/04-build-your-own.{html,pdf,md}</code></td>
+<td>the write-up of Unit 4</td>
+</tr>
+<tr>
+<td><code>nets/ownet/</code></td>
+<td>the Net Lab folder: <code>net.json</code> (the diagram), <code>card.json</code>, <code>writeup.md</code>, <code>train/owNetFromDiagram.nb</code>, <code>runs/</code>, this guide</td>
+</tr>
+<tr>
+<td><code>python/tensor_parser.py</code></td>
+<td>the Python parser and oracle</td>
+</tr>
+</tbody>
+</table>
+<h2 id="14-credits-copyright-and-licence">14. Credits, copyright and licence</h2>
+<p>By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
+AI System Programming Group</p>
+<p>Follows Sutskever, Vinyals and Le (2014), Lample and Charton (2019) and Vaswani et al. (2017), through Units 1–3.</p>
+<p>© Computational Classnotes · CC BY-NC-SA 4.0</p></main><footer>© Computational Classnotes · CC BY-NC-SA 4.0</footer>
+</body></html>
