@@ -17,7 +17,7 @@ What changes from train.py, and why:
      boxes with the masks.
 
 By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
-AI System Programming Group
+AI System Programming Laboratory
 
 © Computational Classnotes · CC BY-NC-SA 4.0
 """

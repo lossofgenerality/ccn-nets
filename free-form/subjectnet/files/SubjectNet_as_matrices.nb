@@ -1,7 +1,7 @@
 Notebook[{
 Cell["SubjectNet as matrices: training, and the trained model", "Title"],
 Cell["By Dara O Shayda and Hikari Noor Hoshino (\:661f\:91ce\:30cc\:30fc\:30eb)
-AI System Programming Group", "Text"],
+AI System Programming Laboratory", "Text"],
 Cell["The first section writes out how the net is trained (forward pass, loss, backpropagation and the Adam step, exactly as in ccn_nets.nn). The second is the trained model that evaluates an input. The third applies it, with the trained numbers in MatrixForm, to the sentence \:201cslide it right 2 units\:201d. Training stores W\:2081 as 2048 \:00d7 32 and works on rows (X\:00b7W\:2081); evaluating one input is the same thing written for a column, W\:2081\:1d40x. Evaluate the two cells below.", "Text"],
 Cell["The trained numbers (from ccn_nets, seed 1234; three decimals)", "Section"],
 Cell["feat = {\"own:none\",\"prev:none\",\"j:start\",\"v:slide\",\"a:it\",\"a:right\",\"a:2\",\"a:units\",\"a2:it_right\"};

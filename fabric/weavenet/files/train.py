@@ -15,7 +15,7 @@ The steps, each written out below:
      areas with z above the threshold are boxed as defects, as in the classical trials.
 
 By Dara O Shayda and Hikari Noor Hoshino (星野ヌール)
-AI System Programming Group
+AI System Programming Laboratory
 
 © Computational Classnotes · CC BY-NC-SA 4.0
 """

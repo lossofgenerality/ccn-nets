@@ -11,7 +11,7 @@ Cell["The training data is generated from templates in this notebook; the nouns 
 
 Cell["Run: open this notebook and evaluate it. The first cell loads MotionPhrases.nb.", "Text"],
 
-Cell["By Dara O Shayda and Hikari Noor Hoshino (\:661f\:91ce\:30cc\:30fc\:30eb)\nAI System Programming Group", "Text"],
+Cell["By Dara O Shayda and Hikari Noor Hoshino (\:661f\:91ce\:30cc\:30fc\:30eb)\nAI System Programming Laboratory", "Text"],
 
 Cell["The net, drawn", "Section"],
 
