@@ -58,9 +58,9 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <li><strong>B, Wolfram's code:</strong> <code>NetChain</code> (or <code>NetGraph</code> when the drawing branches) with <code>NetTrain</code>.</li>
 </ul>
 <p>The page keeps the structure of the CCN String Diagrams editor (<code>lossofgenerality/ccn-string-diagrams</code>): the canvas, drawing wires from port to port, moving, zooming, panning, undo, the inspector, Save and Open as JSON, and Export SVG. The string-diagram mathematics is replaced by the elements of a net.</p>
-<h2>Shared with tensor-algebra-nets</h2>
-<p><code>lossofgenerality/tensor-algebra-nets</code> shows this editor on its site, at <code>docs/net-diagrams.html</code>, by loading it from https://lossofgenerality.github.io/ccn-agent-free-form-language/editor/net-diagram-editor.html?example=tnparser.</p>
-<p><strong>Opening on an example.</strong> <code>?example=</code> followed by <code>subjectnet</code>, <code>seq2seq</code>, <code>transformer</code>, <code>ownet</code>, <code>tnparser</code>, <code>tnpolicy</code> or <code>tnvalue</code> opens the editor on that example. It also gives that page its own saved work in the browser, so a change made on the TensorNets page doesn't appear on this one, nor the other way round. Without it, the editor opens on SubjectNet, as on this project's site. A change pushed here therefore appears there at once; nothing needs copying. <strong>Keep this file's name and place.</strong> If it ever moves, change <code>EDITOR</code> in tensor-algebra-nets' <code>tools/units/build_glossary.py</code> and rebuild there.</p>
+<h2>Shared with monoid-algebra-nets</h2>
+<p><code>lossofgenerality/monoid-algebra-nets</code> shows this editor on its site, at <code>docs/net-diagrams.html</code>, by loading it from https://lossofgenerality.github.io/ccn-agent-free-form-language/editor/net-diagram-editor.html?example=tnparser.</p>
+<p><strong>Opening on an example.</strong> <code>?example=</code> followed by <code>subjectnet</code>, <code>seq2seq</code>, <code>transformer</code>, <code>ownet</code>, <code>tnparser</code>, <code>tnpolicy</code> or <code>tnvalue</code> opens the editor on that example. It also gives that page its own saved work in the browser, so a change made on the TensorNets page doesn't appear on this one, nor the other way round. Without it, the editor opens on SubjectNet, as on this project's site. A change pushed here therefore appears there at once; nothing needs copying. <strong>Keep this file's name and place.</strong> If it ever moves, change <code>EDITOR</code> in monoid-algebra-nets' <code>tools/units/build_glossary.py</code> and rebuild there.</p>
 <h2>The elements</h2>
 <table>
 <thead>
@@ -119,7 +119,7 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <p>Wires run from an output port (right side) to an input port (left side). An input port takes one wire; an output may feed several, which makes a branch.</p>
 <p>The panel on the right reads the drawing as you work. It shows the input, the layers, whether the net is a chain, and the number of weights, with any errors or warnings. <strong>Example: SubjectNet</strong> draws the net of <code>nets/SubjectNet.nb</code>: 2,048 slots, 32 ReLU units, two classes and 65,634 weights.</p>
 <h2>Sequence nets: transformers</h2>
-<p>The editor also draws the transformers of <code>lossofgenerality/tensor-algebra-nets</code>. They are added from <strong>+ Sequence element…</strong>:</p>
+<p>The editor also draws the transformers of <code>lossofgenerality/monoid-algebra-nets</code>. They are added from <strong>+ Sequence element…</strong>:</p>
 <table>
 <thead>
 <tr>
@@ -211,7 +211,7 @@ footer{padding:18px max(5vw,16px) 30px;font-size:13px;color:var(--soft)}
 <p>They are drawn from the nets' definitions, in <code>tools/units/unit4.py</code> and <code>ff_tensornets_new.nb</code>.</p>
 <p><strong>The count.</strong> The panel gives the learnt weights, and the number Wolfram's <code>Information[net, "ArraysTotalElementCount"]</code> reports. That number also counts fixed arrays: sinusoidal positions (2 × d for each embedding) and the label-smoothing table (V × V).</p>
 <p><strong>The code.</strong> Diagram → Code writes a Wolfram notebook with:
-- the parts (multi-head attention, feed-forward, layer normalisation, embeddings, encoder and decoder), as in tensor-algebra-nets;
+- the parts (multi-head attention, feed-forward, layer normalisation, embeddings, encoder and decoder), as in monoid-algebra-nets;
 - the net as a <code>NetGraph</code> of the drawing, with its input, output, target and loss ports;
 - a check of Wolfram's count against the drawing's;
 - a training cell for data of one's own, with the ports it expects.</p>

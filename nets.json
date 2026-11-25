@@ -17,7 +17,7 @@
   "numbers": 59950,
   "status": "trained in Wolfram (Unit 4)",
   "run": "",
-  "source": "lossofgenerality/tensor-algebra-nets@73a83f6"
+  "source": "lossofgenerality/monoid-algebra-nets@73a83f6"
  },
  {
   "project": "tensor-algebras",
@@ -27,7 +27,7 @@
   "numbers": 1422870,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/tensor-algebra-nets@73a83f6"
+  "source": "lossofgenerality/monoid-algebra-nets@73a83f6"
  },
  {
   "project": "tensor-algebras",
@@ -37,7 +37,7 @@
   "numbers": 611468,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/tensor-algebra-nets@73a83f6"
+  "source": "lossofgenerality/monoid-algebra-nets@73a83f6"
  },
  {
   "project": "tensor-algebras",
@@ -47,7 +47,7 @@
   "numbers": 626819,
   "status": "drawn",
   "run": "",
-  "source": "lossofgenerality/tensor-algebra-nets@73a83f6"
+  "source": "lossofgenerality/monoid-algebra-nets@73a83f6"
  },
  {
   "project": "fabric",
